@@ -1,0 +1,353 @@
+<%
+
+	var title = config.title ? `${config.title} - ${query.register ? 'Register' : 'Login'}` : 'Login'
+	
+	var login_form = config.login_form || [
+		{
+			label: "Email Address",
+			name: "username",
+			type: "text",
+			placeholder: "",
+			required: true
+		},
+		{
+			label: "Password",
+			name: "password",
+			type: "password",
+			placeholder: "",
+			required: true
+		}
+	]
+
+	var register_form = config.register_form || [
+		{
+			label: "Email Address",
+			name: "username",
+			type: "text",
+			placeholder: "",
+			required: true
+		},
+		{
+			label: "Password",
+			name: "password",
+			type: "password",
+			placeholder: "",
+			required: true
+		},
+		{
+			label: "Confirm Password",
+			name: "password_confirmation",
+			type: "password",
+			placeholder: "",
+			required: true
+		}
+	]
+
+%>
+
+<html>
+	<head>
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+		<% if (config.title) { %>
+		<title><%- title %></title>
+		<% } %>
+
+		<meta property="og:title" content="<%- title %>">
+
+		<% if (config.icon || config.favicon) { %>
+		<link rel="icon" type="image/png" href="<%- config.icon || config.favicon %>" />
+		<% } %>
+
+		<style>
+
+			/**
+			* Daily UI :: 001
+			* Design a sign up page, modal, form, app screen, etc.
+			**/
+
+			/**
+			* Style Declarations
+			**/
+
+			* {
+				margin: 0;
+			}
+
+			html, body {
+			    /*height: 100%;*/
+			}
+			
+			form {
+				margin: 0
+			}
+
+			body {
+			    background: url("<%- config.background || 'https://res.cloudinary.com/exards/image/upload/v1447941004/Majestic_mountains_1920x1080-blue_rr4ucd.jpg' %>");
+			    background-size: cover;
+			    font-family: 'Proxima Nova', Arial, Helvetica, sans-serif;
+			}
+			#page-wrapper {
+			    display: table;
+			    width: 100%;
+			    height: 100%;
+			}
+			#page-wrapper #modal-wrapper {
+				opacity: 0;
+			    display: table-cell;
+			    width: 100%;
+			    height: 100%;
+			    vertical-align: middle;
+			    transition: all 1s;
+			}
+			#modal {
+			    margin: 0 auto;
+			    box-shadow: 0px 34px 27px rgba(0, 0, 0, 0.32), inset 0 0 1px rgba(0, 0, 0, 0.2);
+			    max-width: 430px;
+			    background: white;
+			}
+			.box {
+			    background: #3b8686;
+			    background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjM2I4Njg2IiBzdG9wLW9wYWNpdHk9IjEiLz4KICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzc5YmQ5YSIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtdWNnZy1nZW5lcmF0ZWQpIiAvPgo8L3N2Zz4=);
+			    background: linear-gradient(135deg, #3b8686 0%, #79bd9a 100%);
+			    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF3B8686', endColorstr='#FF79BD9A', GradientType=1);
+			    padding: 40px;
+			    text-align: center;
+			    position: relative;
+			}
+			.box .box-header {
+			    font-size: 1.75em;
+			    font-weight: 300;
+			    color: white;
+			    text-align: left;
+			    margin: 0 0 36px;
+			}
+			.box svg {
+			    fill: white;
+			}
+			button.proceed {
+			    display: block;
+			    width: 100%;
+			    padding: 20px 0;
+			    color: white;
+			    background: #3b8686;
+			    background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjM2I4Njg2IiBzdG9wLW9wYWNpdHk9IjEiLz4KICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBiNDg2YiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtdWNnZy1nZW5lcmF0ZWQpIiAvPgo8L3N2Zz4=);
+			    background: linear-gradient(135deg, #3b8686 0%, #0b486b 100%);
+			    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF3B8686', endColorstr='#FF0B486B', GradientType=1);
+			    border: 0;
+			    font-size: 1em;
+			    font-weight: bold;
+			    font-family: 'Proxima Nova', Arial, Helvetica, sans-serif;
+			    cursor: pointer;
+			}
+			button.proceed i {
+			    font-size: .8em;
+			}
+			#login-form {
+			    padding: 40px;
+			}
+			#login-form input {
+			    border: 1px solid #ddd;
+			    color: #79bd9a;
+			}
+			#login-form label {
+			    color: #777777;
+			}
+			#register-form input {
+			    border: 1px solid white;
+			    color: #eeeeee;
+			}
+			#register-form label {
+			    color: white;
+			}
+			label {
+			    display: block;
+			    text-align: left;
+			    margin: 20px 0 6px;
+			    font-family: 'Proxima Nova', sans-serif;
+			}
+			label:first-child {
+			    margin-top: 0;
+			}
+			label .tip {
+			    float: right;
+			    font-size: 13px;
+			    text-decoration: underline;
+			    cursor: pointer;
+			    color: #3B8686;
+			    font-weight: bold;
+			}
+			input {
+			    box-sizing: border-box;
+			    width: 100%;
+			    padding: 10px;
+			    font-family: 'Proxima Nova', Arial, Helvetica, sans-serif;
+			    font-size: 1em;
+			    background: transparent;
+			}
+			#toggle-tabs {
+			    display: table;
+			    width: 100%;
+			}
+			#toggle-tabs .tab {
+			    font-size: 1em;
+			    display: table-cell;
+			    width: 50%;
+			    padding: 20px;
+			    cursor: pointer;
+			    text-align: center;
+			    font-weight: bold;
+			}
+			#toggle-tabs .tab#toggle-login {
+			    color: #79bd9a;
+			}
+			#toggle-tabs .tab#toggle-register {
+			    color: white;
+			    background: #79bd9a;
+			}
+			#branding-small {
+			    position: absolute;
+			    top: 36px;
+			    right: 36px;
+			}
+
+			#branding-small svg {
+			    fill: white;
+			}
+
+			.logo {
+				max-width: 80px
+			}
+
+			#branding-small .logo {
+				max-width: 40px
+			}
+
+			#message {
+				font-size: 14px;
+				margin-top: 30px;
+				display: none;
+				color: #FFF;
+				text-align: center;
+			}
+			
+			#login-form #message {
+				color: #000;
+			}
+
+			<%- config.css %>
+		</style>
+	</head>
+    <div id="page-wrapper">
+        <div id="modal-wrapper">
+            <div id="modal">
+                <div id="cards">
+                    <div class="card" id="login">
+                        <div class="box">
+                            <img src="<%- config.logo %>" class="logo">
+                        </div>
+                        <div id="login-form">
+                        	<form onsubmit="app.login(this); return false">
+
+                        		<input style="display: none;" name="__honey" type="text">
+
+                        		<% login_form.map(input => { %>
+	                            <label><%- input.label %></label>
+	                            <input class="textbox" id="<%- input.name %>" type="<%- input.type || 'text' %>" name="<%- input.name %>" required>
+	                            </input>
+                        		<% })%>
+
+	                            <label style="display: none">
+	                                Password
+	                                <a style="display: none;" class="tip" href="#" title="Forgot password?">
+	                                    Forgot password?
+	                                </a>
+	                            </label>
+
+	                            <div id="message" style="display: block;"></div>
+
+	                        </div>
+	                        <button class="proceed" type="submit">
+	                            <%- config.login_button || 'Login to your account' %>
+	                            <i class="ion-ios-arrow-thin-right"></i>
+	                        </button>
+                        </form>
+                    </div>
+                    <% if(!disableRegistration) { %>
+                    <div class="card" id="register">
+                        <form onsubmit="app.register(this); return false">
+                        	<input style="display: none;" name="__honey" type="text">
+	                        <div class="box">
+	                            <div id="branding-small">
+	                                <img src="<%- config.logo %>" class="logo">
+	                            </div>
+	                            <div class="box-header">Register</div>
+	                            <div id="register-form">                        	
+	                                <% register_form.map(input => { %>
+		                            <label><%- input.label %></label>
+		                            <input class="textbox" id="<%- input.name %>" type="<%- input.type || 'text' %>" name="<%- input.name %>" required>
+		                            </input>
+	                        		<% })%>
+	                            </div>
+	                            <div id="message"></div>
+	                        </div>
+	                        <button class="proceed" type="submit">
+	                            <%- config.login_button || 'Create an account' %>
+	                            <i class="ion-ios-arrow-thin-right"></i>
+	                        </button>
+                    	</form>
+                    </div>
+                    <% } %>
+                </div>
+				<% if(!disableRegistration) { %>
+                <div id="toggle-tabs">
+                    <div class="tab" id="toggle-login">
+                        Sign In
+                    </div>
+                    <div class="tab" id="toggle-register">
+                        Register
+                    </div>
+                </div>
+				<% } %>
+            </div>
+        </div>
+    </div>
+    <script src="<%- host %>/auth/jquery.js"></script>
+    <script src="<%- host %>/auth/app.js"></script>
+    <script>
+
+    	setTimeout(() => {
+    		$('#modal-wrapper').css('opacity', 1)
+    	}, 1000)
+
+    	var login = $('#login');
+		var register = $('#register');
+		var button_login = $('#toggle-login');
+		var button_register = $('#toggle-register');
+		var box = $('.box');
+
+		$(function() {
+
+		  register.hide();
+
+		  button_register.click(function() {
+		  		login.slideUp(1000);
+		  		register.slideDown(1000);
+		  });
+
+		  button_login.click(function() {
+		  		register.slideUp(1000);
+		  		login.slideDown(1000);
+		  });
+
+		  <% if(query.register) { %>
+		  	setTimeout(() => {
+		  		button_register.trigger("click");
+		  	}, 100)
+		  <% } %>
+
+		});
+
+    </script>	
+</html>

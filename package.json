@@ -1,0 +1,20 @@
+{
+  "name": "@fwd/auth",
+  "version": "0.0.10",
+  "description": "A NodeJS library to bootstrap saas.",
+  "main": "index.js",
+  "author": "Forward Miami <hello@forward.miami>",
+  "license": "MIT",
+  "homepage": "https://github.com/fwd/auth",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:fwd/auth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fwd/auth/issues"
+  },
+  "dependencies": {
+    "@fwd/server": "^1.0.26",
+    "bcrypt": "^5.0.0"
+  }
+}

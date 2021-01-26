@@ -17,8 +17,7 @@ const database = require('@fwd/database')('local', {
 })
 
 const saas = require('@fwd/sass')({
-	database: database,
-	namespace: 'sass'
+	database: database
 })
 
 saas.start(80, __dirname)

@@ -3,9 +3,9 @@ const _ = require('lodash')
 const glob = require('glob')
 const server = require('@fwd/server')
 
-const api = require('@fwd/api')
-
 module.exports = (config) => {
+	
+	const api = require('@fwd/api')
 	
 	if (!config.namespace) {
 		console.log("Error: namespace required")
@@ -126,7 +126,6 @@ module.exports = (config) => {
 			method: 'get',
 			action: (req) => {
 				return new Promise(async (resolve, reject) => {
-
 
 					if (!req.user) {
 						resolve({

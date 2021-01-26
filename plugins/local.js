@@ -21,6 +21,8 @@ module.exports = (config) => {
 	const utilities = require('./utilities')(config)
 
 	api.use(async (req, res, next) => {
+		
+		req.namespace = config.namespace
 
 		req.database = config.database
 

@@ -1,5 +1,3 @@
-![Cover](https://raw.githubusercontent.com/fwd/sass/master/.github/cover.png)
-
 <h1 align="center">@fwd/sass 🔐</h1>
 
 > A NodeJS library to bootstrap node saas.

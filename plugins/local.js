@@ -172,7 +172,7 @@ module.exports = (config) => {
 			action: (req) => {
 				return new Promise(async (resolve, reject) => {
 					resolve( 
-						api.render(__dirname + '/views/admin.ejs', {
+						api.render('./views/admin.ejs', {
 							config: config
 						}) 
 					)
@@ -188,7 +188,7 @@ module.exports = (config) => {
 			action: (req) => {
 				return new Promise(async (resolve, reject) => {
 					resolve( 
-						api.render(__dirname + '/views/admin.ejs', {
+						api.render('./views/admin.ejs', {
 							config: config
 						}) 
 					)

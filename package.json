@@ -14,6 +14,7 @@
     "url": "https://github.com/fwd/auth/issues"
   },
   "dependencies": {
+    "@fwd/database": "^0.1.4",
     "@fwd/server": "^1.0.26",
     "bcrypt": "^5.0.0"
   }

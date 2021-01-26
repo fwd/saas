@@ -150,6 +150,8 @@ module.exports = (config) => {
 
 		endpoints = endpoints.map(a => {
 
+			a.method = a.method || 'get'
+
 			if (a.auth && typeof a.auth == 'boolean') {
 				a.auth = async (req) => {
 					if (!req.user) {
@@ -165,7 +167,7 @@ module.exports = (config) => {
 
 	api.add(endpoints)
 
-	if (!endpoints.find(a => a.path == '/')) {	
+	if (!endpoints.find(a => a.path == '*')) {	
 		api.add({
 		    path: '*',
 		    method: 'get',

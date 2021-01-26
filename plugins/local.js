@@ -167,38 +167,6 @@ module.exports = (config) => {
 
 	if (!endpoints.find(a => a.path == '/')) {	
 		api.add({
-			path: '/',
-			method: 'get',
-			action: (req) => {
-				return new Promise(async (resolve, reject) => {
-					resolve( 
-						api.render('./views/admin.ejs', {
-							config: config
-						}) 
-					)
-				})
-			}
-		})
-	}
-
-	if (!endpoints.find(a => a.path == '/admin')) {	
-		api.add({
-			path: '/admin',
-			method: 'get',
-			action: (req) => {
-				return new Promise(async (resolve, reject) => {
-					resolve( 
-						api.render('./views/admin.ejs', {
-							config: config
-						}) 
-					)
-				})
-			}
-		})
-	}
-
-	if (!endpoints.find(a => a.path == '/')) {	
-		api.add({
 		    path: '*',
 		    method: 'get',
 		    action: (req) => {

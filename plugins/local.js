@@ -5,8 +5,6 @@ const server = require('@fwd/server')
 
 const api = require('@fwd/api')
 
-const utilities = require('./utilities')
-
 module.exports = (config) => {
 	
 	if (!config.namespace) {
@@ -19,7 +17,8 @@ module.exports = (config) => {
 		return
 	}
 
-	const auth = require('./utilities/auth')(config.database)
+	const auth = require('./utilities/auth')(config)
+	const utilities = require('./utilities')(config)
 
 	api.use(async (req, res, next) => {
 

@@ -1,4 +1,4 @@
-const config = require('../config')
+// const config = require('../config')
 const bcrypt = require('bcrypt')
 const server = require('@fwd/server')
 
@@ -7,8 +7,9 @@ function validateEmail(email) {
     return re.test(email);
 }
 
-module.exports = (database) => {
+module.exports = (config) => {
 
+	const database = config.database
 
 	return {
 

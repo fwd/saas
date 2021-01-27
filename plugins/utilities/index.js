@@ -49,16 +49,32 @@ module.exports = (config) => {
 
 			async global(req) {
 
+		
 				if (ignore.includes(req.originalUrl)) {
 					return
 				}
 
-				var usage = await req.database.get(`${config.namespace}/usage`) || {}
-
-				await req.database.set(`${config.namespace}/usage`, {
-					usage: this.increment(usage.usage),
-					endpoints: this.increment(usage.endpoints, req),
-				})
+				var count = server.cache(`${config.namespace}/count`)
+				
+				var usage = server.cache(`${config.namespace}/usage`)
+				
+				if (!usage) {
+					usage = await req.database.get(`${config.namespace}/usage`) || {}
+				}
+				
+				usage.usage = this.increment(usage.usage)
+				usage.endpoints = this.increment(usage.endpoints)
+				
+				count++
+				
+				server.cache(`${config.namespace}/count`, count)
+				
+				server.cache(`${config.namespace}/usage`, usage)
+				
+				if (count >= 10) {
+					server.cache(`${config.namespace}/count`, 0)
+					await req.database.set(`${config.namespace}/usage`, usage)
+				}
 
 			},
 

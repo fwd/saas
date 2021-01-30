@@ -4,13 +4,12 @@ const server = require('@fwd/server')
 
 module.exports = (config) => {
 
+	config = config || {}
+
 	const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 	const months = ["January", "February", "March", "April", "May","June","July", "August", "September", "October", "November","December"];
 
-	const ignore = [
-		'/',
-		'admin/assets'
-	]
+	const ignore = config.ignore || [ '/', 'admin/assets' ]
 
 	return {
 
@@ -63,7 +62,7 @@ module.exports = (config) => {
 				}
 				
 				usage.usage = this.increment(usage.usage)
-				usage.endpoints = this.increment(usage.endpoints)
+				usage.endpoints = this.increment(usage.endpoints, req)
 				
 				count++
 				
@@ -95,9 +94,9 @@ module.exports = (config) => {
 
 		}, 
 
-		checkForOffendingKeyword(session) {
+		checkForOffendingKeyword(session, config) {
 
-		    var known_bullshit = [
+		    var known_bullshit = config.blacklist || [
 		        '.php',
 		        '.cgi',
 		        '.jsp',

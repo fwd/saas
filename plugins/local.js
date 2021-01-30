@@ -1,6 +1,3 @@
-const fs = require('fs')
-const _ = require('lodash')
-const glob = require('glob')
 const server = require('@fwd/server')
 
 module.exports = (config) => {
@@ -13,7 +10,7 @@ module.exports = (config) => {
 	}
 
 	if (!config.database) {
-		console.log("Error: Database required")
+		console.log("Error: @fwd/database required")
 		return
 	}
 
@@ -34,9 +31,9 @@ module.exports = (config) => {
 	        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 	    }
 	 
-	    if (utilities.checkForOffendingKeyword(session)) {
-	        config.database.create(`${config.namespace}/blacklist`, session)
-	        server.cache('blacklist', await config.database.get(`${config.namespace}/blacklist`))
+	    if (utilities.checkForOffendingKeyword(session, config)) {
+	        req.database.create(`${config.namespace}/blacklist`, session)
+	        server.cache('blacklist', await req.database.get(`${config.namespace}/blacklist`))
 	        denied(res)
 	        return
 	    }
@@ -63,90 +60,97 @@ module.exports = (config) => {
 
 	})
 
-	api.add([
-		{
-			path: '/__login',
-			method: 'post',
-			limit: [30, 60],
-			parameters: [
-				{
-					type: "string",
-					name: "username",
-					required: true
-				},
-				{
-					name: "password",
-					type: "string",
-					required: true
-				},
-			],
-			action: (req) => {
-				return new Promise(async (resolve, reject) => {
-					try	{
-						resolve( await auth.login(req) )
-					} catch (error) {
-						resolve(error)
-					}
-				})
-			}
-		},
-		{
-			path: '/__register',
-			method: 'post',
-			limit: [30, 60],
-			parameters: [
-				{
-					type: "string",
-					name: "username",
-					required: true
-				},
-				{
-					name: "password",
-					type: "string",
-					required: true
-				},
-			],
-			action: (req) => {
-				return new Promise(async (resolve, reject) => {
-					if (config.private) {
-						resolve({
-							code: 401,
-							error: true
-						})
-						return 
-					}
-					try	{
-						resolve( await auth.register(req) )
-					} catch (error) {
-						resolve(error)
-					}
-				})
-			}
-		},
-		{
-			path: '/__user',
-			method: 'get',
-			action: (req) => {
-				return new Promise(async (resolve, reject) => {
+	config.auth = config.auth || true
+	config.registration = config.registration || true
 
-					if (!req.user) {
-						resolve({
-							error: true,
-							code: 401
-						})
-						return
-					}
+	if (config.auth) {
 
-					delete req.user.password
-
-					resolve({
-						user: req.user
+		api.add([
+			{
+				path: '/__login',
+				method: 'post',
+				limit: [30, 60],
+				parameters: [
+					{
+						type: "string",
+						name: "username",
+						required: true
+					},
+					{
+						name: "password",
+						type: "string",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+						try	{
+							resolve( await auth.login(req) )
+						} catch (error) {
+							resolve(error)
+						}
 					})
+				}
+			},
+			{
+				path: '/__register',
+				method: 'post',
+				limit: [30, 60],
+				parameters: [
+					{
+						type: "string",
+						name: "username",
+						required: true
+					},
+					{
+						name: "password",
+						type: "string",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+						if (!config.registration || config.private) {
+							resolve({
+								code: 401,
+								error: true,
+								message: "Registration is disabled"
+							})
+							return 
+						}
+						try	{
+							resolve( await auth.register(req) )
+						} catch (error) {
+							resolve(error)
+						}
+					})
+				}
+			},
+			{
+				path: '/__user',
+				method: 'get',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
 
-				})
+						if (!req.user) {
+							resolve({
+								error: true,
+								code: 401,
+							})
+							return
+						}
+
+						delete req.user.password
+
+						resolve({
+							user: req.user
+						})
+					})
+				}
 			}
-		}
-	])
+		])
+
+	}
 
 	var endpoints = config.endpoints || []
 
@@ -169,9 +173,22 @@ module.exports = (config) => {
 
 	api.add(endpoints)
 
+	if (!endpoints.find(a => a.path == '/')) {	
+		api.add({
+		    path: '/',
+		    method: 'get',
+		    action: (req) => {
+		        return new Promise((resolve, reject) => {
+		            resolve("Hello, World")
+		        })
+		    }
+		})
+	}
+
 	if (!endpoints.find(a => a.path == '*')) {	
 		api.add({
 		    path: '*',
+		    limit: true,
 		    method: 'get',
 		    action: (req) => {
 		        return new Promise((resolve, reject) => {

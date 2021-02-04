@@ -47,27 +47,24 @@ module.exports = (config) => {
 					return
 				}
 
-				var count = server.cache(`${config.namespace}/count`)
-				var usage = server.cache(`${config.namespace}/usage`)
-
-				if (!usage) {
-					usage = await req.database.get(`${config.namespace}/usage`) || {}
-				}
+				var count = server.cache(`${config.namespace}/count`) || 0
+				var usage = server.cache(`${config.namespace}/usage`) || await req.database.get(`${config.namespace}/usage`)
 				
 				usage.usage = this.increment(usage.usage)
 
 				usage.endpoints = this.increment(usage.endpoints, req)
 				
-				count++
-				
-				server.cache(`${config.namespace}/count`, count)
-				
-				server.cache(`${config.namespace}/usage`, usage)
-				
-				if (server.cache(`${config.namespace}/count`) >= 10) {
+				if (count >= 10) {
+					count = 0
 					await req.database.set(`${config.namespace}/usage`, usage)
-					server.cache(`${config.namespace}/count`, 0)
+					return
 				}
+		
+				count++
+
+				server.cache(`${config.namespace}/count`, count)
+
+				server.cache(`${config.namespace}/usage`, usage)
 
 			},
 

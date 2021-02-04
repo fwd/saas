@@ -43,6 +43,8 @@ module.exports = (config) => {
 
 			async global(req) {
 
+				var interval = 10
+
 				if (ignore.includes(req.originalUrl)) {
 					return
 				}
@@ -54,17 +56,14 @@ module.exports = (config) => {
 
 				usage.endpoints = this.increment(usage.endpoints, req)
 				
-				if (count >= 10) {
+				if (count < interval) {
+					server.cache(`${config.namespace}/usage`, usage)
+					server.cache(`${config.namespace}/count`, count++)
+				} else {
 					count = 0
-					await req.database.set(`${config.namespace}/usage`, usage)
-					return
+					req.database.set(`${config.namespace}/usage`, usage)
 				}
 		
-				count++
-
-				server.cache(`${config.namespace}/count`, count)
-
-				server.cache(`${config.namespace}/usage`, usage)
 
 			},
 

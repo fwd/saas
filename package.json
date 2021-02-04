@@ -1,6 +1,6 @@
 {
   "name": "@fwd/saas",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "A NodeJS library to bootstrap saas.",
   "main": "index.js",
   "author": "Forward Miami <hello@forward.miami>",

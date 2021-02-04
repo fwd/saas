@@ -33,6 +33,13 @@ module.exports = (config) => {
 	        createdAt: server.timestamp('LLL', 'us-east'),
 	        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 	    }
+	    
+	    if (blacklist.length && blacklist.find(a => a.ip == session.ip)) {
+	    	// providing anything but 404 gives incentive to keep trying
+			res.status(404).send('Nope')
+			// end
+	        return
+	    }
 	 
 	    if (utilities.checkForOffendingKeyword(session)) {
 	        // storage in database
@@ -45,13 +52,7 @@ module.exports = (config) => {
 	        return
 	    }
 
-	    if (blacklist.length && blacklist.find(a => a.ip == session.ip)) {
-	    	// providing anything but 404 gives incentive to keep trying
-			res.status(404).send('Nope')
-			// end
-	        return
-	    }
-	    
+
 	    req.auth = auth
 		
 		req.session = req.headers['session']

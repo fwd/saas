@@ -26,12 +26,7 @@ module.exports = (config) => {
 
 				var usage = usage || {}
 
-				// var year = (new Date).getFullYear()
-				// var month = months[(new Date).getMonth()]
 				var day = server.timestamp('LL')
-				
-				usage[day] = usage[day] || {}
-				// usage[day] = usage[year][month] || {}
 
 				if (req) {
 					usage[day] = usage[day] || {}
@@ -54,7 +49,11 @@ module.exports = (config) => {
 				}
 
 				var count = server.cache(`${config.namespace}/count`)
-				var usage = server.cache(`${config.namespace}/usage`) || await req.database.get(`${config.namespace}/usage`)
+				var usage = server.cache(`${config.namespace}/usage`)
+
+				if (!usage) {
+					usage = await req.database.get(`${config.namespace}/usage`) || {}
+				}
 				
 				usage.usage = this.increment(usage.usage)
 

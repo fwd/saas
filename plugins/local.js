@@ -34,12 +34,19 @@ module.exports = (config) => {
 	        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 	    }
 	 
-	    if (utilities.checkForOffendingKeyword(session) || blacklist.length && blacklist.find(a => a.ip == session.ip)) {
+	    if (utilities.checkForOffendingKeyword(session)) {
 	        // storage in database
 	        blacklist.push(session)
 	        // refresh cache 
 	        await req.database.set(`${config.namespace}/blacklist`, blacklist)
 	        // providing anything but 404 gives incentive to keep trying
+			res.status(404).send('Nope')
+			// end
+	        return
+	    }
+
+	    if (blacklist.length && blacklist.find(a => a.ip == session.ip)) {
+	    	// providing anything but 404 gives incentive to keep trying
 			res.status(404).send('Nope')
 			// end
 	        return

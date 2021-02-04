@@ -18,53 +18,50 @@ module.exports = (config) => {
 	const utilities = require('./utilities')(config)
 
 	api.use(async (req, res, next) => {
-		
-		req.namespace = config.namespace
 
+		req.auth = auth
 		req.database = config.database
-
-		utilities.usage.global(req)
-	    
-	    var blacklist = server.cache('blacklist') || await req.database.get(`${config.namespace}/blacklist`)
-	    	blacklist = blacklist.length ? blacklist : []
-
-	    var session = {
-	        path: req.originalUrl,
-	        createdAt: server.timestamp('LLL', 'us-east'),
-	        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-	    }
-	    
-	    if (blacklist.length && blacklist.find(a => a.ip == session.ip)) {
-	    	// providing anything but 404 gives incentive to keep trying
-			res.status(404).send('Nope')
-			// end
-	        return
-	    }
-	 
-	    if (utilities.checkForOffendingKeyword(session)) {
-	        // storage in database
-	        blacklist.push(session)
-	        // refresh cache 
-	        await req.database.set(`${config.namespace}/blacklist`, blacklist)
-	        // providing anything but 404 gives incentive to keep trying
-			res.status(404).send('Nope')
-			// end
-	        return
-	    }
-
-
-	    req.auth = auth
-		
+		req.namespace = config.namespace
 		req.session = req.headers['session']
-
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.key || req.query.apiKey
-		
 		req.user = await auth.validate(req.session, null, req.private_key, null)
+
+		// record usage at global level
+		utilities.usage.global(req)
 
 		if (req.user) {
 			utilities.usage.user(req)
-		}
+		} else {
 
+		    var blacklist = server.cache('blacklist') || await req.database.get(`${config.namespace}/blacklist`)
+		    	blacklist = blacklist.length ? blacklist : []
+
+		    var session = {
+		        path: req.originalUrl,
+		        timestamp: server.timestamp('LLL', 'us-east'),
+		        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+		    }
+
+		    if (blacklist.length && blacklist.find(a => a.ip == session.ip)) {
+		    	// providing anything other than 404 gives incentive to keep trying
+				res.status(404).send('Nope')
+				// end
+		        return
+		    }
+		 
+		    if (utilities.checkForOffendingKeyword(session)) {
+		        // storage in database
+		        blacklist.push(session)
+		        // refresh cache 
+		        await req.database.set(`${config.namespace}/blacklist`, blacklist)
+		        // providing anything but 404 gives incentive to keep trying
+				res.status(404).send('Nope')
+				// end
+		        return
+		    }
+
+		}
+	    
 		next()
 
 	})

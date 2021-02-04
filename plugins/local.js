@@ -34,7 +34,7 @@ module.exports = (config) => {
 		} else {
 
 		    var blacklist = server.cache('blacklist') || await req.database.get(`${config.namespace}/blacklist`)
-		    	blacklist = blacklist.length ? blacklist : []
+		    	blacklist = blacklist && blacklist.length ? blacklist : []
 
 		    var session = {
 		        path: req.originalUrl,

@@ -36,9 +36,9 @@ module.exports = (config) => {
 	 
 	    if (utilities.checkForOffendingKeyword(session) || blacklist.length && blacklist.find(a => a.ip == session.ip)) {
 	        // storage in database
-	        req.database.create(`${config.namespace}/blacklist`, session)
+	        blacklist.push(session)
 	        // refresh cache 
-	        server.cache('blacklist', await req.database.get(`${config.namespace}/blacklist`))
+	        await req.database.set(`${config.namespace}/blacklist`, blacklist)
 	        // providing anything but 404 gives incentive to keep trying
 			res.status(404).send('Nope')
 			// end

@@ -26,20 +26,20 @@ module.exports = (config) => {
 
 				var usage = usage || {}
 
-				var year = (new Date).getFullYear()
-				var month = months[(new Date).getMonth()]
+				// var year = (new Date).getFullYear()
+				// var month = months[(new Date).getMonth()]
 				var day = server.timestamp('LL')
 				
-				usage[year] = usage[year] || {}
-				usage[year][month] = usage[year][month] || {}
+				usage[day] = usage[day] || {}
+				// usage[day] = usage[year][month] || {}
 
 				if (req) {
-					usage[year][month][day] = usage[year][month][day] || {}
-					usage[year][month][day][req.originalUrl] = usage[year][month][day][req.originalUrl] || 0
-					usage[year][month][day][req.originalUrl]++
+					usage[day] = usage[day] || {}
+					usage[day][req.originalUrl] = usage[day][req.originalUrl] || 0
+					usage[day][req.originalUrl]++
 				} else {
-					usage[year][month][day] = usage[year][month][day] || 0
-					usage[year][month][day]++
+					usage[day] = usage[day] || 0
+					usage[day]++
 				}
 
 				return usage 

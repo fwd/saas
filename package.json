@@ -14,8 +14,9 @@
     "url": "https://github.com/fwd/saas/issues"
   },
   "dependencies": {
-    "@fwd/api": "^1.0.6",
-    "@fwd/database": "^0.1.4",
-    "@fwd/server": "^1.0.26"
+    "@fwd/api": "*",
+    "@fwd/database": "*",
+    "@fwd/server": "*",
+    "bcrypt": "^5.0.0"
   }
 }

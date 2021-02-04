@@ -24,6 +24,9 @@ module.exports = (config) => {
 		req.database = config.database
 
 		utilities.usage.global(req)
+	    
+	    var blacklist = server.cache('blacklist') || await req.database.get(`${config.namespace}/blacklist`)
+	    	blacklist = blacklist.length ? blacklist : []
 
 	    var session = {
 	        path: req.originalUrl,
@@ -31,23 +34,21 @@ module.exports = (config) => {
 	        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 	    }
 	 
-	    if (utilities.checkForOffendingKeyword(session, config)) {
+	    if (utilities.checkForOffendingKeyword(session) || blacklist.length && blacklist.find(a => a.ip == session.ip)) {
+	        // storage in database
 	        req.database.create(`${config.namespace}/blacklist`, session)
+	        // refresh cache 
 	        server.cache('blacklist', await req.database.get(`${config.namespace}/blacklist`))
-	        denied(res)
-	        return
-	    }
-	   
-	    var blacklist = server.cache('blacklist') || []
-
-	    if (blacklist.length && blacklist.find(a => a.ip === session.ip)) {
-	        denied(res)
+	        // providing anything but 404 gives incentive to keep trying
+			res.status(404).send('Nope')
+			// end
 	        return
 	    }
 	    
 	    req.auth = auth
 		
 		req.session = req.headers['session']
+
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.key || req.query.apiKey
 		
 		req.user = await auth.validate(req.session, null, req.private_key, null)

@@ -94,9 +94,9 @@ module.exports = (config) => {
 
 		}, 
 
-		checkForOffendingKeyword(session, config) {
+		checkForOffendingKeyword(session) {
 
-		    var known_bullshit = config.blacklist || [
+		    var blacklist = config.blacklist || [
 		        '.php',
 		        '.cgi',
 		        '.jsp',
@@ -115,8 +115,8 @@ module.exports = (config) => {
 		        'phpadmin',
 		    ]
 
-		    for (var i in known_bullshit) {
-		        if (session.path.includes(known_bullshit[i])) {
+		    for (var i in blacklist) {
+		        if (session.path.includes(blacklist[i])) {
 		            return true
 		        }
 		    }

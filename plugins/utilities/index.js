@@ -43,7 +43,6 @@ module.exports = (config) => {
 
 			async global(req) {
 
-		
 				if (ignore.includes(req.originalUrl)) {
 					return
 				}
@@ -65,9 +64,9 @@ module.exports = (config) => {
 				
 				server.cache(`${config.namespace}/usage`, usage)
 				
-				if (count >= 10) {
-					server.cache(`${config.namespace}/count`, 0)
+				if (server.cache(`${config.namespace}/count`) >= 10) {
 					await req.database.set(`${config.namespace}/usage`, usage)
+					server.cache(`${config.namespace}/count`, 0)
 				}
 
 			},

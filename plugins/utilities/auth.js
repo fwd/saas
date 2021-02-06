@@ -101,8 +101,18 @@ module.exports = (config) => {
 				var user = await database.findOne(`${config.namespace}/users`, {
 					username: username
 				})
+				
+				
+				if (!user) {
+					reject({
+						code: 401,
+						error: true,
+						message: "Account not found."
+					})
+					return
+				}
 
-				if (!await bcrypt.compare(password, user.password)) {
+				if (!user || !await bcrypt.compare(password, user.password)) {
 					reject({
 						code: 401,
 						error: true,

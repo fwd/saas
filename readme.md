@@ -1,11 +1,11 @@
-<h1 align="center">@fwd/sass 🔐</h1>
+<h1 align="center">@fwd/saas 🔐</h1>
 
-> A NodeJS library to bootstrap node saas.
+> An NPM package for bootstraping NODE SaaS applications.
 
 ## Install
 
 ```sh
-npm install @fwd/sass
+npm install fwd/saas
 ```
 
 ## Usage
@@ -13,12 +13,12 @@ npm install @fwd/sass
 ```js
 
 const database = require('@fwd/database')('local', {
-	database: "database.json"
+	filename: "database.json"
 })
 
-const saas = require('@fwd/sass')({
+const saas = require('@fwd/saas')({
+	namespace: 'hello_world'
 	database: database,
-	namespace: 'saas'
 })
 
 saas.start(80, __dirname)
@@ -36,12 +36,14 @@ saas.start(80, __dirname)
 
 Contributions, issues and feature requests are welcome! Feel free to check [issues page](https://github.com/fwd/auth/issues).
 
-## ⭐️ Show your support
-
-Give a star if this project helped you, and help us continue maintaining this project by contributing to it or becoming a sponsor.
-
-[Become a sponsor to fwd](https://github.com/sponsors/fwd)
-
 ## 📝 License
 
-Copyright © 2020 [Forward Miami](https://forward.miami). This project is [Apache-2.0](https://spdx.org/licenses/Apache-2.0.html) licensed.
+MIT License
+
+Copyright © 2021 [Forward Miami](https://forward.miami).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice (including the next paragraph) shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

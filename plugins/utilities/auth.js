@@ -102,7 +102,6 @@ module.exports = (config) => {
 					username: username
 				})
 				
-				
 				if (!user) {
 					reject({
 						code: 401,
@@ -130,7 +129,6 @@ module.exports = (config) => {
 
 			})
 			
-
 		},
 
 		register(req) {

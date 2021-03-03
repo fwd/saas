@@ -30,7 +30,9 @@ module.exports = (config) => {
 		utilities.usage.global(req)
 
 		if (req.user) {
+			
 			utilities.usage.user(req)
+
 		} else {
 
 		    var blacklist = server.cache('blacklist') || await req.database.get(`${config.namespace}/blacklist`)
@@ -166,9 +168,7 @@ module.exports = (config) => {
 
 			if (a.auth && typeof a.auth == 'boolean') {
 				a.auth = async (req) => {
-					if (!req.user) {
-						return false
-					}
+					if (!req.user) return false
 					return true
 				}
 			} 

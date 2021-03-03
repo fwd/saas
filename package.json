@@ -1,7 +1,7 @@
 {
   "name": "@fwd/saas",
   "version": "0.1.16",
-  "description": "A NodeJS library to bootstrap saas.",
+  "description": "A NodeJS library to bootstrap SaaS development.",
   "main": "index.js",
   "author": "Forward Miami <hello@forward.miami>",
   "license": "MIT",
@@ -14,9 +14,9 @@
     "url": "https://github.com/fwd/saas/issues"
   },
   "dependencies": {
-    "@fwd/api": "*",
-    "@fwd/database": "*",
-    "@fwd/server": "*",
-    "bcrypt": "^5.0.0"
+    "@fwd/api": "github:fwd/api",
+    "@fwd/database": "github:fwd/database",
+    "@fwd/server": "github:fwd/server",
+    "bcrypt": "^5.0.1"
   }
 }

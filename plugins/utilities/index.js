@@ -1,26 +1,14 @@
-// const config = require('../config')
-
 const server = require('@fwd/server')
 
 module.exports = (config) => {
 
 	config = config || {}
 
-	const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-	const months = ["January", "February", "March", "April", "May","June","July", "August", "September", "October", "November","December"];
-
-	const ignore = config.ignore || [ 'admin/assets' ]
-
 	return {
 
-		current: {
-			day: days[(new Date).getDate()],
-			month: months[(new Date).getMonth()],
-			year: (new Date).getFullYear(),
-			hour: (new Date).getHours()
-		},
-
 		usage: {
+
+			ignore: config.usage && config.usage.ignore ? config.usage.ignore : [ 'admin/assets' ]
 
 			increment(usage, req) {
 
@@ -43,7 +31,7 @@ module.exports = (config) => {
 
 			async global(req) {
 
-				if (ignore.includes(req.originalUrl)) {
+				if (this.ignore.includes(req.originalUrl)) {
 					return
 				}
 
@@ -59,7 +47,7 @@ module.exports = (config) => {
 
 			async user(req) {
 
-				if (ignore.includes(req.originalUrl)) {
+				if (this.ignore.includes(req.originalUrl)) {
 					return
 				}
 

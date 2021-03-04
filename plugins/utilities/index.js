@@ -8,7 +8,7 @@ module.exports = (config) => {
 
 		usage: {
 
-			ignore: config.usage && config.usage.ignore ? config.usage.ignore : [ 'admin/assets' ]
+			ignore: config.usage && config.usage.ignore ? config.usage.ignore : [ 'admin/assets' ],
 
 			increment(usage, req) {
 

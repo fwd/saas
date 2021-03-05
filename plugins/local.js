@@ -75,7 +75,7 @@ module.exports = (config) => {
 
 		api.add([
 			{
-				path: '/__login',
+				path: '/login',
 				method: 'post',
 				limit: [30, 60],
 				parameters: [
@@ -101,7 +101,7 @@ module.exports = (config) => {
 				}
 			},
 			{
-				path: '/__register',
+				path: '/register',
 				method: 'post',
 				limit: [30, 60],
 				parameters: [
@@ -135,7 +135,7 @@ module.exports = (config) => {
 				}
 			},
 			{
-				path: '/__user',
+				path: '/user',
 				method: 'get',
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
@@ -153,6 +153,7 @@ module.exports = (config) => {
 						resolve({
 							user: req.user
 						})
+						
 					})
 				}
 			}

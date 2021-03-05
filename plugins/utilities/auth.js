@@ -1,4 +1,4 @@
-// const config = require('../config')
+const moment = require('moment')
 const bcrypt = require('bcrypt')
 const server = require('@fwd/server')
 
@@ -14,6 +14,13 @@ module.exports = (config) => {
 	return {
 
 		database: database,
+
+		// validate: {
+		// 	async user(userId) {},
+		// 	async session(sessionId) {},
+		// 	async privateKey(sessionId) {},
+		// 	async publicKey(sessionId) {},
+		// },
 
 		async validate(sessionId, user, private_key, public_key) {
 
@@ -64,9 +71,10 @@ module.exports = (config) => {
 			if (user) {
 
 				var session = {
-					id: server.uuid(),
 					userId: user.id,
+					id: server.uuid(),
 					created_at: server.timestamp('LLL'),
+					expiration: moment(server.timestamp('LLL')).add(24, 'hours')
 				}
 				
 				await database.create(`${config.namespace}/sessions`, session)
@@ -123,8 +131,8 @@ module.exports = (config) => {
 				var session = await self.validate(null, user)
 
 				resolve({
-					sessionId: session.id,
-					username: user.username
+					session: session.id,
+					exp: session.expiration
 				})
 
 			})
@@ -132,6 +140,8 @@ module.exports = (config) => {
 		},
 
 		register(req) {
+
+			var self = this
 
 			var username = req.body.username
 
@@ -171,7 +181,8 @@ module.exports = (config) => {
 					namespace: server.uuid(true).slice(0, 7),
 					public_key: `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`,
 					private_key: `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`,
-					created_at: server.timestamp('LLL')
+					created_at: server.timestamp('LLL'),
+					metadata: {}
 				}
 
 				await database.create(`${config.namespace}/users`, user) 
@@ -179,8 +190,8 @@ module.exports = (config) => {
 				var session = await self.validate(null, user)
 
 				resolve({
-					sessionId: session.id,
-					username: user.username
+					session: session.id,
+					exp: session.expiration
 				})
 
 			})

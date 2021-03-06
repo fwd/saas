@@ -195,7 +195,6 @@ module.exports = (config) => {
 	if (!endpoints.find(a => a.path == '*')) {	
 		api.add({
 		    path: '*',
-		    limit: true,
 		    method: 'get',
 		    action: (req) => {
 		        return new Promise((resolve, reject) => {

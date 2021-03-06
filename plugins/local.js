@@ -77,7 +77,7 @@ module.exports = (config) => {
 			{
 				path: '/login',
 				method: 'post',
-				limit: [30, 60],
+				limit: [5, 60],
 				parameters: [
 					{
 						type: "string",
@@ -103,7 +103,7 @@ module.exports = (config) => {
 			{
 				path: '/register',
 				method: 'post',
-				limit: [30, 60],
+				limit: [5, 60],
 				parameters: [
 					{
 						type: "string",

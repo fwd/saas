@@ -111,7 +111,7 @@ module.exports = (config) => {
 				})
 				
 				if (!user) {
-					reject({
+					resolve({
 						code: 401,
 						error: true,
 						message: "Account not found."
@@ -120,7 +120,7 @@ module.exports = (config) => {
 				}
 
 				if (!user || !await bcrypt.compare(password, user.password)) {
-					reject({
+					resolve({
 						code: 401,
 						error: true,
 						message: "The password provided does not match."
@@ -150,7 +150,7 @@ module.exports = (config) => {
 			return new Promise(async (resolve, reject) => {
 
 				if (!validateEmail(username)) {
-					reject({
+					resolve({
 						code: 400,
 						error: true,
 						message: "Username must be a valid email address."
@@ -164,7 +164,7 @@ module.exports = (config) => {
 
 				if (user) {
 
-					reject({
+					resolve({
 						code: 404,
 						error: true,
 						message: "Account already exists."

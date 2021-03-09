@@ -200,6 +200,43 @@ module.exports = (config) => {
 			
 		},
 
+		async update_user(key, user, value) {
+
+			if (key === 'password') {
+				value = await bcrypt.hash(password, 10)
+			}
+
+			if (key === 'namespace') {
+				value = server.uuid(true).slice(0, 7)
+			}
+
+			if (key === 'public_key') {
+				value = `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`
+			}
+
+			if (key === 'private_key') {
+				value = `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`
+			}
+
+			if (key === 'password') {
+				value = await bcrypt.hash(password, 10)
+			}
+
+			if (key === 'metadata') {
+				Object.keys(value).map(key => {
+					user.metadata[key] = value[key]
+				})
+				value = user.metadata
+			}
+			
+			await database.update(`${config.namespace}/users`, user.id, {
+				[key]: value,
+			})
+
+			return
+
+		},
+
 		reset(req) {
 
 			var self = this

@@ -129,47 +129,11 @@ module.exports = (config) => {
 				],
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
-
 						if (!config.registration || config.private) {
 							resolve({
 								code: 401,
 								error: true,
-								message: "Registration is disabled"
-							})
-							return 
-						}
-						try	{
-							resolve( await auth.register(req) )
-						} catch (error) {
-							resolve(error)
-						}
-
-					})
-				}
-			},
-			{
-				path: '/register',
-				method: 'post',
-				limit: [5, 60],
-				parameters: [
-					{
-						type: "string",
-						name: "username",
-						required: true
-					},
-					{
-						name: "password",
-						type: "string",
-						required: true
-					},
-				],
-				action: (req) => {
-					return new Promise(async (resolve, reject) => {
-						if (!config.registration || config.private) {
-							resolve({
-								code: 401,
-								error: true,
-								message: "Registration is disabled"
+								message: "Registration is not allowed."
 							})
 							return 
 						}
@@ -228,7 +192,9 @@ module.exports = (config) => {
 					})
 				}
 			},
+			
 			{
+				auth: true,
 				path: '/user',
 				method: 'get',
 				action: (req) => {
@@ -250,7 +216,45 @@ module.exports = (config) => {
 						
 					})
 				}
+			},
+			{
+				auth: true,
+				path: '/user/settings',
+				method: 'post',
+				parameters: [
+					{
+						name: "password",
+						type: "string",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							resolve({
+								error: true,
+								code: 401,
+							})
+							return
+						}
+
+						var keys = Object.keys(req.body)
+
+						for (var i in keys) {
+							await update_user(keys[i], user, req.body[key])
+						}
+
+						resolve({
+							success: true
+						})
+
+					})
+
+				}
+
 			}
+
 		])
 
 	}

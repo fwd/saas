@@ -220,7 +220,7 @@ module.exports = (config) => {
 				if (!self.updatable_keys.includes(key)) {
 					resolve({
 						error: true,
-						message: `'${key}' key is not supported. Store this value in metadata instead.`
+						message: `Updating user.${key} key is not allowed. Store this value in metadata instead.`
 					})
 					return
 				}

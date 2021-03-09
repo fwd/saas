@@ -219,15 +219,14 @@ module.exports = (config) => {
 			},
 			{
 				auth: true,
-				path: '/user/settings',
+				path: '/user',
 				method: 'post',
-				parameters: [
-					{
-						name: "password",
-						type: "string",
-						required: true
-					},
-				],
+				parameters: auth.updatable_keys.map(key => {
+					return {
+						name: key,
+						type: "string"
+					}
+				}),
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 

@@ -14,6 +14,16 @@ module.exports = (config) => {
 
 	return {
 
+		updatable_keys: [
+			'username',
+			'password',
+			'namespace',
+			'public_key',
+			'private_key',
+			'created_at',
+			'metadata',
+		],
+
 		database: database,
 
 		// validate: {
@@ -200,40 +210,55 @@ module.exports = (config) => {
 			
 		},
 
-		async update_user(key, user, value) {
+		update(key, user, value) {
 
-			if (key === 'password') {
-				value = await bcrypt.hash(password, 10)
-			}
+			var self = this
 
-			if (key === 'namespace') {
-				value = server.uuid(true).slice(0, 7)
-			}
+			return new Promise(async (resolve, reject) => {
 
-			if (key === 'public_key') {
-				value = `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`
-			}
+				if (!self.updatable_keys.includes(key)) {
+					resolve({
+						error: true,
+						message: `'${key}' key is not supported. Store this value in metadata instead.`
+					})
+					return
+				}
 
-			if (key === 'private_key') {
-				value = `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`
-			}
+				if (key === 'password') {
+					value = await bcrypt.hash(password, 10)
+				}
 
-			if (key === 'password') {
-				value = await bcrypt.hash(password, 10)
-			}
+				if (key === 'namespace') {
+					value = server.uuid(true).slice(0, 7)
+				}
 
-			if (key === 'metadata') {
-				Object.keys(value).map(key => {
-					user.metadata[key] = value[key]
+				if (key === 'public_key') {
+					value = `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`
+				}
+
+				if (key === 'private_key') {
+					value = `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`
+				}
+
+				if (key === 'password') {
+					value = await bcrypt.hash(password, 10)
+				}
+
+				if (key === 'metadata') {
+					Object.keys(value).map(key => {
+						user.metadata[key] = value[key]
+					})
+					value = user.metadata
+				}
+				
+				await database.update(`${config.namespace}/users`, user.id, {
+					[key]: value,
+					updated_at: server.timestamp('LLL')
 				})
-				value = user.metadata
-			}
-			
-			await database.update(`${config.namespace}/users`, user.id, {
-				[key]: value,
-			})
 
-			return
+				resolve()
+
+			})
 
 		},
 
@@ -263,9 +288,7 @@ module.exports = (config) => {
 					id: reset.userId
 				})
 
-				await database.update(`${config.namespace}/users`, user.id , {
-					password: await bcrypt.hash(password, 10),
-				})
+				await this.update('password', user, password)
 
 				// remove all previous sessions
 				var sessions = await database.find(`${config.namespace}/sessions`, {

@@ -192,7 +192,7 @@ module.exports = (config) => {
 					})
 				}
 			},
-			
+
 			{
 				auth: true,
 				path: '/user',
@@ -242,7 +242,22 @@ module.exports = (config) => {
 						var keys = Object.keys(req.body)
 
 						for (var i in keys) {
-							await update_user(keys[i], user, req.body[key])
+							
+							if (!auth.updatable_keys.includes(keys[i])) {
+								resolve({
+									error: true,
+									message: `'${keys[i]}' key is not supported. Store this value in metadata instead.`
+								})
+								return
+							}
+							
+							var update = await auth.update(keys[i], user, req.body[key])
+
+							if (update.error) {
+								resolve(update.error)
+								return
+							}
+
 						}
 
 						resolve({

@@ -1,8 +1,11 @@
+const _ = require('lodash')
+const moment = require('moment')
 const server = require('@fwd/server')
+const api = require('@fwd/api')
+
+moment.suppressDeprecationWarnings = true;
 
 module.exports = (config) => {
-	
-	const api = require('@fwd/api')
 	
 	if (!config.namespace) {
 		console.log("Error: namespace required")
@@ -12,6 +15,14 @@ module.exports = (config) => {
 	if (!config.database) {
 		console.log("Error: @fwd/database required")
 		return
+	}
+
+	if (!config.business.name && !config.business.logo) {
+		console.log("WARN: Server business is not configured.")
+	}
+
+	if (!config.plugins.find(a => a.name == 'mailgun')) {
+		console.log("WARN: Server mail service is not configured.")
 	}
 
 	const auth = require('./utilities/auth')(config)
@@ -118,6 +129,7 @@ module.exports = (config) => {
 				],
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
+
 						if (!config.registration || config.private) {
 							resolve({
 								code: 401,
@@ -128,6 +140,88 @@ module.exports = (config) => {
 						}
 						try	{
 							resolve( await auth.register(req) )
+						} catch (error) {
+							resolve(error)
+						}
+
+					})
+				}
+			},
+			{
+				path: '/register',
+				method: 'post',
+				limit: [5, 60],
+				parameters: [
+					{
+						type: "string",
+						name: "username",
+						required: true
+					},
+					{
+						name: "password",
+						type: "string",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+						if (!config.registration || config.private) {
+							resolve({
+								code: 401,
+								error: true,
+								message: "Registration is disabled"
+							})
+							return 
+						}
+						try	{
+							resolve( await auth.register(req) )
+						} catch (error) {
+							resolve(error)
+						}
+					})
+				}
+			},
+			{
+				path: '/forgot',
+				method: 'post',
+				limit: [5, 60],
+				parameters: [
+					{
+						type: "string",
+						name: "username",
+						required: true
+					}
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+						try	{
+							resolve( await auth.forgot(req) )
+						} catch (error) {
+							resolve(error)
+						}
+					})
+				}
+			},
+			{
+				path: '/reset',
+				method: 'post',
+				limit: [5, 60],
+				parameters: [
+					{
+						name: "token",
+						type: "string",
+						required: true
+					},
+					{
+						name: "password",
+						type: "string",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+						try	{
+							resolve( await auth.reset(req) )
 						} catch (error) {
 							resolve(error)
 						}

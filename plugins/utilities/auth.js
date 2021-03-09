@@ -9,6 +9,7 @@ function validateEmail(email) {
 
 module.exports = (config) => {
 
+	const utilities = require(__dirname + '/index')(config)
 	const database = config.database
 
 	return {
@@ -58,7 +59,7 @@ module.exports = (config) => {
 					id: sessionId
 				})
 
-				if (!session) {
+				if (!session || moment(session.expiration).isAfter(moment())) {
 					return false
 				}
 
@@ -129,6 +130,129 @@ module.exports = (config) => {
 				}
 
 				var session = await self.validate(null, user)
+
+				resolve({
+					session: session.id,
+					exp: session.expiration
+				})
+
+			})
+			
+		},
+
+		forgot(req) {
+
+			var self = this
+
+			var username = req.body.username
+
+			return new Promise(async (resolve, reject) => {
+
+				if (!validateEmail(username)) {
+					reject({
+						code: 400,
+						error: true,
+						message: "Username must be a valid email address."
+					})
+					return
+				}
+		
+				var user = await database.findOne(`${config.namespace}/users`, {
+					username: username
+				})
+				
+				if (!user) {
+					resolve({
+						code: 401,
+						error: true,
+						message: "Account not found."
+					})
+					return
+				}
+
+				var reset = {
+					userId: user.id,
+					id: server.uuid().split('-').join(''),
+					expiration: moment(server.timestamp('LLL')).add(1, 'hour')
+				}
+
+				var reset = await database.create(`${config.namespace}/resets`, reset)
+
+				var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
+				var resetUrl = host + '?token=' + reset.id + '/#/reset'
+
+				var email = {
+					to: username,
+					subject: 'Password Reset',
+					from: `${config.business.name} <noreply@forward.miami>`,
+					html: await utilities.render('reset.html', {
+						host: host,
+						business: config.business,
+						config: config,
+						resetId: reset.id,
+						resetUrl: resetUrl
+					})
+				}
+
+				resolve( await utilities.mail(email) )
+
+			})
+			
+		},
+
+		reset(req) {
+
+			var self = this
+
+			var resetId = req.body.token
+			var password = req.body.password
+
+			return new Promise(async (resolve, reject) => {
+		
+				var reset = await database.findOne(`${config.namespace}/resets`, {
+					id: resetId
+				})
+				
+				if (!reset || (reset && reset.used) || (reset && moment().isAfter(moment(reset.expiration)))) {
+					resolve({
+						code: 401,
+						error: true,
+						message: "Invalid token."
+					})
+					return
+				}
+
+				var user = await database.findOne(`${config.namespace}/users`, {
+					id: reset.userId
+				})
+
+				await database.update(`${config.namespace}/users`, user.id , {
+					password: await bcrypt.hash(password, 10),
+				})
+
+				// remove all previous sessions
+				var sessions = await database.find(`${config.namespace}/sessions`, {
+					userId: user.id
+				})
+				
+				for (var i in sessions) {
+					await database.remove(`${config.namespace}/sessions`, sessions[i].id)
+				}
+
+				// remove all previous resets
+				var resets = await database.find(`${config.namespace}/resets`, {
+					userId: user.id
+				})
+
+				for (var i in resets) {
+					await database.remove(`${config.namespace}/resets`, resets[i].id)
+				}
+
+				var session = await self.validate(null, user)
+
+				await database.update(`${config.namespace}/resets`, reset.id , {
+					used: server.timestamp('LLL'),
+				})
 
 				resolve({
 					session: session.id,

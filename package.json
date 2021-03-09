@@ -17,6 +17,7 @@
     "@fwd/api": "github:fwd/api",
     "@fwd/database": "github:fwd/database",
     "@fwd/server": "github:fwd/server",
-    "bcrypt": "^5.0.1"
+    "bcrypt": "^5.0.1",
+    "js-yaml": ">=3.13.1"
   }
 }

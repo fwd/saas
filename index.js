@@ -17,7 +17,7 @@ module.exports = (config) => {
 
 	} catch (e) {
 
-		// console.log("Error:", e)
+		console.log("Error:", e)
 		
 	}
 

@@ -70,7 +70,7 @@ module.exports = (config) => {
 					id: sessionId
 				})
 
-				if (!session || moment(session.expiration).isAfter(moment())) {
+				if (!session || moment().isAfter(moment(session.expiration))) {
 					return false
 				}
 

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fwd/api": "github:fwd/api",
+    "@fwd/blacklist": "github:fwd/blacklist",
     "@fwd/database": "github:fwd/database",
     "@fwd/server": "github:fwd/server",
     "bcrypt": "^5.0.1",

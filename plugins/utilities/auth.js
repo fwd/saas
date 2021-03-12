@@ -181,17 +181,17 @@ module.exports = (config) => {
 					return
 				}
 
-				var reset = {
+				var token = {
 					userId: user.id,
 					type: 'password_reset',
 					id: server.uuid().split('-').join(''),
 					expiration: moment(server.timestamp('LLL')).add(1, 'hour')
 				}
 
-				var reset = await database.create(`${config.namespace}/tokens`, reset)
+				var token = await database.create(`${config.namespace}/tokens`, token)
 
 				var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
-				var resetUrl = host + '?token=' + reset.id + '/#/reset'
+				var resetUrl = host + '?token=' + token.id + '/#/reset'
 
 				var email = {
 					to: username,
@@ -201,7 +201,7 @@ module.exports = (config) => {
 						host: host,
 						business: config.business,
 						config: config,
-						resetId: reset.id,
+						resetId: token.id,
 						resetUrl: resetUrl
 					})
 				}
@@ -239,7 +239,7 @@ module.exports = (config) => {
 					await database.create(`${config.namespace}/tokens`, token)
 
 					var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
-					var buttonUrl = host + '/user/validate/email/' + token.id
+					var buttonUrl = host + '/verify/email/' + token.id
 
 					var email = {
 						to: req.user.username,
@@ -318,16 +318,16 @@ module.exports = (config) => {
 
 			var self = this
 
-			var resetId = req.body.token
+			var tokenId = req.body.token
 			var password = req.body.password
 
 			return new Promise(async (resolve, reject) => {
 		
-				var reset = await database.findOne(`${config.namespace}/tokens`, {
-					id: resetId
+				var token = await database.findOne(`${config.namespace}/tokens`, {
+					id: tokenId
 				})
 				
-				if (!reset || (reset && reset.used) || (reset && moment().isAfter(moment(reset.expiration)))) {
+				if (!token || (token && token.used) || (token && moment().isAfter(moment(token.expiration)))) {
 					resolve({
 						code: 401,
 						error: true,
@@ -337,7 +337,7 @@ module.exports = (config) => {
 				}
 
 				var user = await database.findOne(`${config.namespace}/users`, {
-					id: reset.userId
+					id: token.userId
 				})
 
 				await this.update('password', user, password)
@@ -352,17 +352,18 @@ module.exports = (config) => {
 				}
 
 				// remove all previous tokens
-				var resets = await database.find(`${config.namespace}/tokens`, {
-					userId: user.id
+				var tokens = await database.find(`${config.namespace}/tokens`, {
+					userId: user.id,
+					type: 'password_reset',
 				})
 
-				for (var i in resets) {
-					await database.remove(`${config.namespace}/tokens`, resets[i].id)
+				for (var i in tokens) {
+					await database.remove(`${config.namespace}/tokens`, tokens[i].id)
 				}
 
 				var session = await self.validate(null, user)
 
-				await database.update(`${config.namespace}/tokens`, reset.id , {
+				await database.update(`${config.namespace}/tokens`, token.id , {
 					used: server.timestamp('LLL'),
 				})
 

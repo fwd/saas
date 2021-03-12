@@ -272,11 +272,10 @@ module.exports = (config) => {
 
 			{
 				auth: true,
-				path: '/user/validate/email',
+				path: '/verify/email',
 				method: 'post',
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
-
 						if (!req.user) {
 							resolve({
 								error: true,
@@ -284,18 +283,14 @@ module.exports = (config) => {
 							})
 							return
 						}
-
 						resolve( await auth.verify('email', req) )
-
 					})
-
 				}
-
 			},
 
 			{
 				method: 'get',
-				path: '/user/validate/email/:token',
+				path: '/verify/email/:token',
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 

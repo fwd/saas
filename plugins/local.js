@@ -299,7 +299,7 @@ module.exports = (config) => {
 						})
 
 						if (!token && (token && moment().isAfter(moment(token.expiration)))) {
-							resolve( "Not Ok" )
+							resolve({ redirect: '/' })
 							return
 						}
 

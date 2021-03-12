@@ -183,11 +183,12 @@ module.exports = (config) => {
 
 				var reset = {
 					userId: user.id,
+					type: 'password_reset',
 					id: server.uuid().split('-').join(''),
 					expiration: moment(server.timestamp('LLL')).add(1, 'hour')
 				}
 
-				var reset = await database.create(`${config.namespace}/resets`, reset)
+				var reset = await database.create(`${config.namespace}/tokens`, reset)
 
 				var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
 				var resetUrl = host + '?token=' + reset.id + '/#/reset'
@@ -206,6 +207,56 @@ module.exports = (config) => {
 				}
 
 				resolve( await utilities.mail(email) )
+
+			})
+			
+		},
+
+		verify(type, req) {
+
+			var self = this
+
+			return new Promise(async (resolve, reject) => {
+
+				if (type === 'email') {
+
+					var token = {
+						id: server.uuid(),
+						userId: req.user.id,
+						type: 'email_verification',
+						expiration: moment(server.timestamp('LLL')).add(15, 'minutes')
+					}
+
+					var history = await database.find(`${config.namespace}/tokens`, {
+						userId: req.user.id,
+						type: 'email_verification'
+					})
+					
+					for (var i in history) {
+						await database.remove(`${config.namespace}/tokens`, history[i].id)
+					}
+
+					await database.create(`${config.namespace}/tokens`, token)
+
+					var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
+					var buttonUrl = host + '/user/validate/email/' + token.id
+
+					var email = {
+						to: req.user.username,
+						subject: 'Verify Email Address',
+						from: `${config.business.name} <noreply@forward.miami>`,
+						html: await utilities.render('welcome.html', {
+							host: host,
+							config: config,
+							business: config.business,
+							buttonUrl: buttonUrl
+						})
+					}
+
+					resolve( await utilities.mail(email) )
+
+				}
+				
 
 			})
 			
@@ -272,7 +323,7 @@ module.exports = (config) => {
 
 			return new Promise(async (resolve, reject) => {
 		
-				var reset = await database.findOne(`${config.namespace}/resets`, {
+				var reset = await database.findOne(`${config.namespace}/tokens`, {
 					id: resetId
 				})
 				
@@ -300,18 +351,18 @@ module.exports = (config) => {
 					await database.remove(`${config.namespace}/sessions`, sessions[i].id)
 				}
 
-				// remove all previous resets
-				var resets = await database.find(`${config.namespace}/resets`, {
+				// remove all previous tokens
+				var resets = await database.find(`${config.namespace}/tokens`, {
 					userId: user.id
 				})
 
 				for (var i in resets) {
-					await database.remove(`${config.namespace}/resets`, resets[i].id)
+					await database.remove(`${config.namespace}/tokens`, resets[i].id)
 				}
 
 				var session = await self.validate(null, user)
 
-				await database.update(`${config.namespace}/resets`, reset.id , {
+				await database.update(`${config.namespace}/tokens`, reset.id , {
 					used: server.timestamp('LLL'),
 				})
 

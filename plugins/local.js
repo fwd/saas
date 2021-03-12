@@ -217,6 +217,7 @@ module.exports = (config) => {
 					})
 				}
 			},
+
 			{
 				auth: true,
 				path: '/user',
@@ -261,6 +262,62 @@ module.exports = (config) => {
 
 						resolve({
 							success: true
+						})
+
+					})
+
+				}
+
+			},
+
+			{
+				auth: true,
+				path: '/user/validate/email',
+				method: 'post',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							resolve({
+								error: true,
+								code: 401,
+							})
+							return
+						}
+
+						resolve( await auth.verify('email', req) )
+
+					})
+
+				}
+
+			},
+
+			{
+				method: 'get',
+				path: '/user/validate/email/:token',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						var token = await req.database.findOne(`${config.namespace}/tokens`, {
+							id: req.params.token
+						})
+
+						if (!token && (token && moment().isAfter(moment(token.expiration)))) {
+							resolve( "Not Ok" )
+							return
+						}
+
+						var user = await req.database.findOne(`${config.namespace}/users`, {
+							id: token.userId
+						})
+
+						await auth.update('metadata', user, {
+							verified_email: true
+						})
+
+						resolve({
+							redirect: '/'
 						})
 
 					})

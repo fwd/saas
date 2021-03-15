@@ -181,17 +181,17 @@ module.exports = (config) => {
 					return
 				}
 
-				var token = {
+				var reset = {
 					userId: user.id,
 					type: 'password_reset',
 					id: server.uuid().split('-').join(''),
 					expiration: moment(server.timestamp('LLL')).add(1, 'hour')
 				}
 
-				var token = await database.create(`${config.namespace}/tokens`, token)
+				var reset = await database.create(`${config.namespace}/tokens`, reset)
 
 				var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
-				var resetUrl = host + '?token=' + token.id + '/#/reset'
+				var resetUrl = host + '?token=' + reset.id + '/#/reset'
 
 				var email = {
 					to: username,
@@ -201,7 +201,7 @@ module.exports = (config) => {
 						host: host,
 						business: config.business,
 						config: config,
-						resetId: token.id,
+						resetId: reset.id,
 						resetUrl: resetUrl
 					})
 				}
@@ -239,7 +239,7 @@ module.exports = (config) => {
 					await database.create(`${config.namespace}/tokens`, token)
 
 					var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
-					var buttonUrl = host + '/verify/email/' + token.id
+					var buttonUrl = host + '/user/validate/email/' + token.id
 
 					var email = {
 						to: req.user.username,
@@ -277,36 +277,36 @@ module.exports = (config) => {
 				}
 
 				if (key === 'password') {
-					value = await bcrypt.hash(password, 10)
+					user[key] = await bcrypt.hash(password, 10)
 				}
 
 				if (key === 'namespace') {
-					value = server.uuid(true).slice(0, 7)
+					user[key] = server.uuid(true).slice(0, 7)
 				}
 
 				if (key === 'public_key') {
-					value = `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`
+					user[key] = `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`
 				}
 
 				if (key === 'private_key') {
-					value = `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`
-				}
-
-				if (key === 'password') {
-					value = await bcrypt.hash(password, 10)
+					user[key] = `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`
 				}
 
 				if (key === 'metadata') {
 					Object.keys(value).map(key => {
 						user.metadata[key] = value[key]
 					})
-					value = user.metadata
 				}
-				
-				await database.update(`${config.namespace}/users`, user.id, {
-					[key]: value,
-					updated_at: server.timestamp('LLL')
+
+				// TODO find out why this fixes the bug of records no updating
+				// unless we findOne first...wtf?
+				await database.findOne(`${config.namespace}/users`, {
+					id: user.id
 				})
+
+				user.updated_at = server.timestamp('LLL')
+				
+				await database.update(`${config.namespace}/users`, user.id, user)
 
 				resolve()
 
@@ -318,16 +318,16 @@ module.exports = (config) => {
 
 			var self = this
 
-			var tokenId = req.body.token
+			var resetId = req.body.token
 			var password = req.body.password
 
 			return new Promise(async (resolve, reject) => {
 		
-				var token = await database.findOne(`${config.namespace}/tokens`, {
-					id: tokenId
+				var reset = await database.findOne(`${config.namespace}/tokens`, {
+					id: resetId
 				})
 				
-				if (!token || (token && token.used) || (token && moment().isAfter(moment(token.expiration)))) {
+				if (!reset || (reset && reset.used) || (reset && moment().isAfter(moment(reset.expiration)))) {
 					resolve({
 						code: 401,
 						error: true,
@@ -337,7 +337,7 @@ module.exports = (config) => {
 				}
 
 				var user = await database.findOne(`${config.namespace}/users`, {
-					id: token.userId
+					id: reset.userId
 				})
 
 				await this.update('password', user, password)
@@ -352,18 +352,17 @@ module.exports = (config) => {
 				}
 
 				// remove all previous tokens
-				var tokens = await database.find(`${config.namespace}/tokens`, {
-					userId: user.id,
-					type: 'password_reset',
+				var resets = await database.find(`${config.namespace}/tokens`, {
+					userId: user.id
 				})
 
-				for (var i in tokens) {
-					await database.remove(`${config.namespace}/tokens`, tokens[i].id)
+				for (var i in resets) {
+					await database.remove(`${config.namespace}/tokens`, resets[i].id)
 				}
 
 				var session = await self.validate(null, user)
 
-				await database.update(`${config.namespace}/tokens`, token.id , {
+				await database.update(`${config.namespace}/tokens`, reset.id , {
 					used: server.timestamp('LLL'),
 				})
 

@@ -33,7 +33,11 @@ module.exports = (config) => {
 		// 	async privateKey(sessionId) {},
 		// 	async publicKey(sessionId) {},
 		// },
-
+		
+		generateUuid(prepend, length) {
+			return `${prepend}${server.uuid().split('-').join('').toLowerCase().slice(0, length)}`
+		},
+		
 		async validate(sessionId, user, private_key, public_key) {
 
 			if (public_key) {
@@ -285,11 +289,11 @@ module.exports = (config) => {
 				}
 
 				if (key === 'public_key') {
-					user[key] = `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`
+					user[key] = self.generateUuid('public-', 12)
 				}
 
 				if (key === 'private_key') {
-					user[key] = `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`
+					user[key] = self.generateUuid('private-', 12)
 				}
 
 				if (key === 'metadata') {
@@ -415,8 +419,8 @@ module.exports = (config) => {
 					username: username,
 					password: await bcrypt.hash(password, 10),
 					namespace: server.uuid(true).slice(0, 7),
-					public_key: `PUBLIC-${server.uuid().split('-').join('').toUpperCase()}`,
-					private_key: `PRIVATE-${server.uuid().split('-').join('').toUpperCase()}`,
+					public_key: self.generateUuid('public-', 12),
+					private_key: self.generateUuid('private-', 8),
 					created_at: server.timestamp('LLL'),
 					metadata: {}
 				}
@@ -427,7 +431,7 @@ module.exports = (config) => {
 
 				resolve({
 					session: session.id,
-					exp: session.expiration
+					exp: session.epiration
 				})
 
 			})

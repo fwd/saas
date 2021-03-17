@@ -37,8 +37,9 @@ module.exports = (config) => {
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.key || req.query.apiKey
 		req.user = await auth.validate(req.session, null, req.private_key, null)
 
-		// record usage at global level
-		utilities.usage.global(req)
+		if (config.usage) {
+			utilities.usage.global(req)
+		}
 
 		if (req.user) {
 			

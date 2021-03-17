@@ -54,7 +54,7 @@ module.exports = (config) => {
 
 				var usage = req.user.usage || {}
 
-				await req.database.update('users', req.user.id, {
+				req.database.update(`${config.namespace}/users`, req.user.id, {
 					usage: this.increment(usage.usage),
 					endpoints: this.increment(usage.endpoints, req),
 				})

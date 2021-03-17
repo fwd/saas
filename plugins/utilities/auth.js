@@ -420,7 +420,7 @@ module.exports = (config) => {
 					password: await bcrypt.hash(password, 10),
 					namespace: server.uuid(true).slice(0, 7),
 					public_key: self.generateUuid('public-', 12),
-					private_key: self.generateUuid('private-', 8),
+					private_key: self.generateUuid('private-', 12),
 					created_at: server.timestamp('LLL'),
 					metadata: {}
 				}

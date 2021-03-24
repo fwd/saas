@@ -391,6 +391,8 @@ module.exports = (config) => {
 
 			var password = req.body.password
 
+			var metadata = req.body.metadata
+
 			return new Promise(async (resolve, reject) => {
 
 				if (!validateEmail(username)) {
@@ -426,7 +428,7 @@ module.exports = (config) => {
 					public_key: self.generateUuid('public-', 14),
 					private_key: self.generateUuid('private-', 14),
 					created_at: server.timestamp('LLL'),
-					metadata: {}
+					metadata: metadata || {}
 				}
 
 				await database.create(`${config.namespace}/users`, user) 

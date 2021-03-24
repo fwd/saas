@@ -196,6 +196,19 @@ module.exports = (config) => {
 
 			{
 				auth: true,
+				path: '/logout',
+				method: 'post',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						resolve( await req.database.remove(req.namespace + '/sessions', req.headers.session) )
+						
+					})
+				}
+			},
+			
+			{
+				auth: true,
 				path: '/user',
 				method: 'get',
 				action: (req) => {

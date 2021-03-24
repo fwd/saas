@@ -146,6 +146,10 @@ module.exports = (config) => {
 
 				var session = await self.validate(null, user)
 
+				await database.update(`${config.namespace}/users`, user.id, {
+					last_login: server.timestamp('LLL')
+				})
+
 				resolve({
 					session: session.id,
 					exp: session.expiration

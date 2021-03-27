@@ -201,10 +201,6 @@ module.exports = (config) => {
 				var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
 				var resetUrl = host + '?token=' + reset.id + '/#/reset'
 
-				if (config.business && config.business.logo && !config.business.logo.includes('http')) {
-					config.business.logo = `${host}${config.business.logo}`
-				}
-
 				var email = {
 					to: username,
 					subject: 'Password Reset',

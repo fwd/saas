@@ -428,6 +428,7 @@ module.exports = (config) => {
 					public_key: self.generateUuid('public-', 14),
 					private_key: self.generateUuid('private-', 14),
 					created_at: server.timestamp('LLL'),
+					last_login: server.timestamp('LLL'),
 					metadata: metadata || {}
 				}
 

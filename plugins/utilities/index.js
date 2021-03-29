@@ -15,15 +15,15 @@ module.exports = (config) => {
 
 				var usage = usage || {}
 
-				var day = server.timestamp('LL')
+				var date = `${server.timestamp('MMMM YYYY')}`
 
 				if (req) {
-					usage[day] = usage[day] || {}
-					usage[day][req.originalUrl] = usage[day][req.originalUrl] || 0
-					usage[day][req.originalUrl]++
+					usage[date] = usage[date] || {}
+					usage[date][req.originalUrl] = usage[date][req.originalUrl] || 0
+					usage[date][req.originalUrl]++
 				} else {
-					usage[day] = usage[day] || 0
-					usage[day]++
+					usage[date] = usage[date] || 0
+					usage[date]++
 				}
 
 				return usage 

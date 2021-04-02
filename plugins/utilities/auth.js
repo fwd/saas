@@ -196,15 +196,15 @@ module.exports = (config) => {
                     expiration: moment(server.timestamp('LLL')).add(1, 'hour')
                 }
 
-                var reset = await database.create(`${config.namespace}/tokens`, reset)
+                await database.create(`${config.namespace}/tokens`, reset)
 
                 var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
                 var resetUrl = host + '?token=' + reset.id + '/#/reset'
 
                 var email = {
                     to: username,
-                    subject: 'Password Reset',
-                    from: `${config.business.name} <noreply@forward.miami>`,
+                    subject: 'Password Reset Request',
+                    from: `${config.business.name} <${config.business.email}>`,
                     html: await utilities.render('reset.html', {
                         host: host,
                         business: config.business,

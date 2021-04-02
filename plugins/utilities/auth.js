@@ -247,7 +247,11 @@ module.exports = (config) => {
                     await database.create(`${config.namespace}/tokens`, token)
 
                     var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
-                    var buttonUrl = host + '/user/validate/email/' + token.id
+                    var buttonUrl = host + `/user/validate/email/${token.id }`
+
+                    if (config.business.verificationRedirect) {
+                        buttonUrl += '?redirect=' + config.business.verificationRedirect
+                    }
 
                     var email = {
                         to: req.user.username,

@@ -317,16 +317,12 @@ module.exports = (config) => {
 							return
 						}
 
-						var user = await req.database.findOne(`${config.namespace}/users`, {
-							id: token.userId
-						})
-
-						await auth.update('metadata', user, {
+						await req.database.update(`${config.namespace}/users`, user.id, {
 							verified_email: true
 						})
 
 						resolve({
-							redirect: '/'
+							redirect: req.query.redirect || '/'
 						})
 
 					})

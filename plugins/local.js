@@ -317,7 +317,7 @@ module.exports = (config) => {
 							return
 						}
 
-						await req.database.update(`${config.namespace}/users`, user.id, {
+						await req.database.update(`${config.namespace}/users`, token.userId, {
 							verified_email: true
 						})
 

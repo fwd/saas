@@ -392,6 +392,9 @@ module.exports = (config) => {
 			var password = req.body.password
 
 			var metadata = req.body.metadata
+			
+			var referral = req.body.referral
+			
 
 			return new Promise(async (resolve, reject) => {
 
@@ -429,6 +432,7 @@ module.exports = (config) => {
 					private_key: self.generateUuid('private-', 14),
 					created_at: server.timestamp('LLL'),
 					last_login: server.timestamp('LLL'),
+					referral: referral,
 					metadata: metadata || {}
 				}
 

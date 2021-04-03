@@ -289,7 +289,7 @@ module.exports = (config) => {
                 }
 
                 if (key === 'password') {
-                    user[key] = await bcrypt.hash(password, 10)
+                    user[key] = await bcrypt.hash(value, 10)
                 }
 
                 if (key === 'namespace') {

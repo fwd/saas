@@ -18,11 +18,11 @@ module.exports = (config) => {
 	}
 
 	if (!config.business.name && !config.business.logo) {
-		console.log("WARN: Server business is not configured.")
+		if (config.debug) console.log("WARN: Server business is not configured.")
 	}
 
 	if (!config.plugins.find(a => a.name == 'mailgun')) {
-		console.log("WARN: Server mail service is not configured.")
+		if (config.debug) console.log("WARN: Server mail service is not configured.")
 	}
 
 	const auth = require('./utilities/auth')(config)

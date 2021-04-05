@@ -42,19 +42,22 @@ module.exports = (config) => {
 
 		} else {
 
-		    var blacklist = server.cache('blacklist') || await req.database.get(`blacklist`)
+		    var blacklist = await req.database.get(`blacklist`)
 		    	blacklist = blacklist && blacklist.length ? blacklist : []
+			
+		    var ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+		    	ipAddress = ipAddress.replace('::ffff:', '')
 
 		    var session = {
 		        path: req.originalUrl,
 		        timestamp: server.timestamp('LLL', 'us-east'),
-		        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+		        ip: ipAddress,
 		    }
 
-		    if (blacklist.length && blacklist.find(a => a.ip == session.ip)) {
+		    if (blacklist.length && blacklist.find(a => a.ip == ipAddress)) {
 		    	// providing anything other than 404 gives incentive to keep trying
-				res.status(404).send('Nope')
-				// end
+			res.status(404).send('Nope')
+			// end
 		        return
 		    }
 		 
@@ -64,8 +67,8 @@ module.exports = (config) => {
 		        // refresh cache 
 		        await req.database.set(`blacklist`, blacklist)
 		        // providing anything but 404 gives incentive to keep trying
-				res.status(404).send(`You've been banned from using this service. `)
-				// end
+			res.status(404).send(`You've been banned from using this service. `)
+			// end
 		        return
 		    }
 

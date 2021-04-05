@@ -6,11 +6,6 @@ const api = require('@fwd/api')
 moment.suppressDeprecationWarnings = true;
 
 module.exports = (config) => {
-	
-	if (!config.namespace) {
-		console.log("Error: namespace required")
-		return
-	}
 
 	if (!config.database) {
 		console.log("Error: @fwd/database required")
@@ -32,7 +27,7 @@ module.exports = (config) => {
 
 		req.auth = auth
 		req.database = config.database
-		req.namespace = config.namespace
+		// req.namespace = config.namespace
 		req.session = req.headers['session']
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null)
@@ -47,7 +42,7 @@ module.exports = (config) => {
 
 		} else {
 
-		    var blacklist = server.cache('blacklist') || await req.database.get(`${config.namespace}/blacklist`)
+		    var blacklist = server.cache('blacklist') || await req.database.get(`blacklist`)
 		    	blacklist = blacklist && blacklist.length ? blacklist : []
 
 		    var session = {
@@ -67,7 +62,7 @@ module.exports = (config) => {
 		        // storage in database
 		        blacklist.push(session)
 		        // refresh cache 
-		        await req.database.set(`${config.namespace}/blacklist`, blacklist)
+		        await req.database.set(`blacklist`, blacklist)
 		        // providing anything but 404 gives incentive to keep trying
 				res.status(404).send(`You've been banned from using this service. `)
 				// end
@@ -201,7 +196,7 @@ module.exports = (config) => {
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 
-						resolve( await req.database.remove(req.namespace + '/sessions', req.headers.session) )
+						resolve( await req.database.remove('sessions', req.headers.session) )
 						
 					})
 				}
@@ -308,7 +303,7 @@ module.exports = (config) => {
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 
-						var token = await req.database.findOne(`${config.namespace}/tokens`, {
+						var token = await req.database.findOne(`tokens`, {
 							id: req.params.token
 						})
 
@@ -317,7 +312,7 @@ module.exports = (config) => {
 							return
 						}
 
-						await req.database.update(`${config.namespace}/users`, token.userId, {
+						await req.database.update(`users`, token.userId, {
 							verified_email: true
 						})
 

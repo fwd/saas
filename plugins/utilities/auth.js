@@ -42,7 +42,7 @@ module.exports = (config) => {
 
             if (public_key) {
 
-                var user = await database.findOne(`${config.namespace}/users`, {
+                var user = await database.findOne(`users`, {
                     public_key: public_key
                 })
 
@@ -56,7 +56,7 @@ module.exports = (config) => {
 
             if (private_key) {
 
-                var user = await database.findOne(`${config.namespace}/users`, {
+                var user = await database.findOne(`users`, {
                     private_key: private_key
                 })
 
@@ -70,7 +70,7 @@ module.exports = (config) => {
 
             if (sessionId && !user) {
                 
-                var session = await database.findOne(`${config.namespace}/sessions`, {
+                var session = await database.findOne(`sessions`, {
                     id: sessionId
                 })
 
@@ -78,7 +78,7 @@ module.exports = (config) => {
                     return false
                 }
 
-                return await database.findOne(`${config.namespace}/users`, {
+                return await database.findOne(`users`, {
                     id: session.userId
                 })
 
@@ -93,7 +93,7 @@ module.exports = (config) => {
                     expiration: moment(server.timestamp('LLL')).add(24, 'hours')
                 }
                 
-                await database.create(`${config.namespace}/sessions`, session)
+                await database.create(`sessions`, session)
 
                 return session
 
@@ -122,7 +122,7 @@ module.exports = (config) => {
                     return
                 }
         
-                var user = await database.findOne(`${config.namespace}/users`, {
+                var user = await database.findOne(`users`, {
                     username: username
                 })
                 
@@ -146,7 +146,7 @@ module.exports = (config) => {
 
                 var session = await self.validate(null, user)
 
-                await database.update(`${config.namespace}/users`, user.id, {
+                await database.update(`users`, user.id, {
                     last_login: server.timestamp('LLL')
                 })
 
@@ -176,7 +176,7 @@ module.exports = (config) => {
                     return
                 }
         
-                var user = await database.findOne(`${config.namespace}/users`, {
+                var user = await database.findOne(`users`, {
                     username: username
                 })
                 
@@ -196,7 +196,7 @@ module.exports = (config) => {
                     expiration: moment(server.timestamp('LLL')).add(1, 'hour')
                 }
 
-                await database.create(`${config.namespace}/tokens`, reset)
+                await database.create(`tokens`, reset)
 
                 var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
                 var resetUrl = host + '?token=' + reset.id + '/#/reset'
@@ -235,16 +235,16 @@ module.exports = (config) => {
                         expiration: moment(server.timestamp('LLL')).add(15, 'minutes')
                     }
 
-                    var history = await database.find(`${config.namespace}/tokens`, {
+                    var history = await database.find(`tokens`, {
                         userId: req.user.id,
                         type: 'email_verification'
                     })
                     
                     for (var i in history) {
-                        await database.remove(`${config.namespace}/tokens`, history[i].id)
+                        await database.remove(`tokens`, history[i].id)
                     }
 
-                    await database.create(`${config.namespace}/tokens`, token)
+                    await database.create(`tokens`, token)
 
                     var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
                     var buttonUrl = host + `/user/validate/email/${token.id }`
@@ -312,13 +312,13 @@ module.exports = (config) => {
 
                 // TODO find out why this fixes the bug of records no updating
                 // unless we findOne first...wtf?
-                await database.findOne(`${config.namespace}/users`, {
+                await database.findOne(`users`, {
                     id: user.id
                 })
 
                 user.updated_at = server.timestamp('LLL')
                 
-                await database.update(`${config.namespace}/users`, user.id, user)
+                await database.update(`users`, user.id, user)
 
                 resolve()
 
@@ -337,7 +337,7 @@ module.exports = (config) => {
 
                 try {
     
-                    var reset = await database.findOne(`${config.namespace}/tokens`, {
+                    var reset = await database.findOne(`tokens`, {
                         id: resetId
                     })
                     
@@ -350,24 +350,24 @@ module.exports = (config) => {
                         return
                     }
 
-                    var user = await database.findOne(`${config.namespace}/users`, {
+                    var user = await database.findOne(`users`, {
                         id: reset.userId
                     })
 
                     await self.update('password', user, password)
 
                     // remove all previous sessions
-                    var sessions = await database.find(`${config.namespace}/sessions`, {
+                    var sessions = await database.find(`sessions`, {
                         userId: user.id
                     })
                     
                     for (var i in sessions) {
-                        await database.remove(`${config.namespace}/sessions`, sessions[i].id)
+                        await database.remove(`sessions`, sessions[i].id)
                     }
 
                     var session = await self.validate(null, user)
 
-                    await database.update(`${config.namespace}/tokens`, reset.id, {
+                    await database.update(`tokens`, reset.id, {
                         used: server.timestamp('LLL'),
                     })
 
@@ -409,7 +409,7 @@ module.exports = (config) => {
                     return
                 }
         
-                var user = await database.findOne(`${config.namespace}/users`, {
+                var user = await database.findOne(`users`, {
                     username: username
                 })
 
@@ -438,7 +438,7 @@ module.exports = (config) => {
                     metadata: metadata || {}
                 }
 
-                await database.create(`${config.namespace}/users`, user) 
+                await database.create(`users`, user) 
 
                 var session = await self.validate(null, user)
 

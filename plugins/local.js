@@ -56,7 +56,7 @@ module.exports = (config) => {
 
 		    if (blacklist.length && blacklist.find(a => a.ip == ipAddress)) {
 		    	// providing anything other than 404 gives incentive to keep trying
-			res.status(404).send('Nope')
+			res.status(404).send(`You've been banned from using this service.`)
 			// end
 		        return
 		    }
@@ -67,7 +67,7 @@ module.exports = (config) => {
 		        // refresh cache 
 		        await req.database.set(`blacklist`, blacklist)
 		        // providing anything but 404 gives incentive to keep trying
-			res.status(404).send(`You've been banned from using this service. `)
+			res.status(404).send(`You've been banned from using this service.`)
 			// end
 		        return
 		    }

@@ -334,54 +334,52 @@ module.exports = (config) => {
             var password = req.body.password
 
             return new Promise(async (resolve, reject) => {
-        
-                var reset = await database.findOne(`${config.namespace}/tokens`, {
-                    id: resetId
-                })
-                
-                if (!reset || (reset && reset.used) || (reset && moment().isAfter(moment(reset.expiration)))) {
-                    resolve({
-                        code: 401,
-                        error: true,
-                        message: "Invalid token."
+
+                try {
+    
+                    var reset = await database.findOne(`${config.namespace}/tokens`, {
+                        id: resetId
                     })
-                    return
+                    
+                    if (!reset || (reset && reset.used) || (reset && moment().isAfter(moment(reset.expiration)))) {
+                        resolve({
+                            code: 401,
+                            error: true,
+                            message: "Invalid token."
+                        })
+                        return
+                    }
+
+                    var user = await database.findOne(`${config.namespace}/users`, {
+                        id: reset.userId
+                    })
+
+                    await self.update('password', user, password)
+
+                    // remove all previous sessions
+                    var sessions = await database.find(`${config.namespace}/sessions`, {
+                        userId: user.id
+                    })
+                    
+                    for (var i in sessions) {
+                        await database.remove(`${config.namespace}/sessions`, sessions[i].id)
+                    }
+
+                    var session = await self.validate(null, user)
+
+                    await database.update(`${config.namespace}/tokens`, reset.id, {
+                        used: server.timestamp('LLL'),
+                    })
+
+                    resolve({
+                        session: session.id,
+                        exp: session.expiration
+                    })
+
+                } catch(e) {
+                    console.log(e)
                 }
 
-                var user = await database.findOne(`${config.namespace}/users`, {
-                    id: reset.userId
-                })
-
-                await this.update('password', user, password)
-
-                // remove all previous sessions
-                var sessions = await database.find(`${config.namespace}/sessions`, {
-                    userId: user.id
-                })
-                
-                for (var i in sessions) {
-                    await database.remove(`${config.namespace}/sessions`, sessions[i].id)
-                }
-
-                // remove all previous tokens
-                var resets = await database.find(`${config.namespace}/tokens`, {
-                    userId: user.id
-                })
-
-                for (var i in resets) {
-                    await database.remove(`${config.namespace}/tokens`, resets[i].id)
-                }
-
-                var session = await self.validate(null, user)
-
-                await database.update(`${config.namespace}/tokens`, reset.id , {
-                    used: server.timestamp('LLL'),
-                })
-
-                resolve({
-                    session: session.id,
-                    exp: session.expiration
-                })
 
             })
             
@@ -428,7 +426,7 @@ module.exports = (config) => {
                 }
 
                 var user = {
-                    id: server.uuid(),
+                    id: server.uuid(true),
                     username: username,
                     password: await bcrypt.hash(password, 10),
                     namespace: server.uuid(true).slice(0, 7),

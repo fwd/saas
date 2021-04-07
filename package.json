@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "@fwd/api": "github:fwd/api",
-    "@fwd/blacklist": "github:fwd/blacklist",
     "@fwd/database": "github:fwd/database",
     "@fwd/server": "github:fwd/server",
+    "@fwd/security": "github:fwd/security",
     "bcrypt": "^5.0.1",
     "js-yaml": "^4.0.0"
   }

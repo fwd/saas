@@ -2,6 +2,7 @@ const _ = require('lodash')
 const moment = require('moment')
 const server = require('@fwd/server')
 const api = require('@fwd/api')
+const security = require('@fwd/security')
 
 moment.suppressDeprecationWarnings = true;
 
@@ -27,7 +28,6 @@ module.exports = (config) => {
 
 		req.auth = auth
 		req.database = config.database
-		// req.namespace = config.namespace
 		req.session = req.headers['session']
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null)
@@ -35,48 +35,23 @@ module.exports = (config) => {
 		if (config.usage) {
 			utilities.usage.global(req)
 		}
-
+	
 		if (req.user) {
-			
 			utilities.usage.user(req)
-
-		} else {
-
-		    var blacklist = await req.database.get(`blacklist`)
-		    	blacklist = blacklist && blacklist.length ? blacklist : []
-			
-		    var ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-		    	ipAddress = ipAddress.replace('::ffff:', '')
-
-		    var session = {
-		        path: req.originalUrl,
-		        timestamp: server.timestamp('LLL', 'us-east'),
-		        ip: ipAddress,
-		    }
-
-		    if (blacklist.length && blacklist.find(a => a.ip == ipAddress)) {
-		    	// providing anything other than 404 gives incentive to keep trying
-			res.status(404).send(`You've been banned from using this service.`)
-			// end
-		        return
-		    }
-		 
-		    if (utilities.checkForOffendingKeyword(session)) {
-		        // storage in database
-		        blacklist.push(session)
-		        // refresh cache 
-		        await req.database.set(`blacklist`, blacklist)
-		        // providing anything but 404 gives incentive to keep trying
-			res.status(404).send(`You've been banned from using this service.`)
-			// end
-		        return
-		    }
-
 		}
 	    
 		next()
 
 	})
+
+	security.allow = (req) => {
+		if (req.user) {
+			return true
+		}
+		return false
+	}
+
+	api.use(security.firewall)
 
 	config.auth = config.auth || true
 	config.registration = config.registration || true

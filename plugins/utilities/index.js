@@ -7,63 +7,34 @@ module.exports = (config) => {
 
 	return {
 
-		usage: {
+		increment(usage, req) {
 
-			ignore: config.usage && config.usage.ignore ? config.usage.ignore : [ 'admin/assets' ],
+			var usage = !Array.isArray(usage) ? usage : {}
 
-			increment(usage, req) {
+			var date = `${server.timestamp('MMMM YYYY')}`
 
-				var usage = usage || {}
+			usage[date] = usage[date] || {}
+			usage[date][req.originalUrl] = usage[date][req.originalUrl] || 0
+			usage[date][req.originalUrl]++
 
-				var date = `${server.timestamp('MMMM YYYY')}`
+			return usage 
 
-				if (req) {
-					usage[date] = usage[date] || {}
-					usage[date][req.originalUrl] = usage[date][req.originalUrl] || 0
-					usage[date][req.originalUrl]++
-				} else {
-					usage[date] = usage[date] || 0
-					usage[date]++
-				}
+		},
 
-				return usage 
+		async usage(req) {
 
-			},
-
-			async global(req) {
-
-				if (this.ignore.includes(req.originalUrl)) {
-					return
-				}
-
-				var count = server.cache(`count`) || 0
-				var usage = await req.database.get(`usage`) || {}
-				
-				usage.usage = this.increment(usage.usage)
-				usage.endpoints = this.increment(usage.endpoints, req)
-
-				req.database.set(`usage`, usage)
-
-			},
-
-			async user(req) {
-
-				if (this.ignore.includes(req.originalUrl)) {
-					return
-				}
-
-				var usage = req.user.usage || {}
-
-				req.database.update(`users`, req.user.id, {
-					usage: {
-						requests: this.increment(usage.requests),
-						endpoints: this.increment(usage.endpoints, req),
-					}
-				})
-
+			if (req.user) {
+				req.originalUrl = req.originalUrl.split('/?')[0]
+				req.originalUrl = req.originalUrl.split('?')[0]
+				var usage = await req.database.get(`usage/${req.user.id}`)
+				await req.database.set(`usage/${req.user.id}`, this.increment(usage, req))
+				return
 			}
 
-		}, 
+			var usage = await req.database.get(`usage/_global`)
+			await req.database.set(`usage/_global`, this.increment(usage, req))
+
+		},
 
 		checkForOffendingKeyword(session) {
 

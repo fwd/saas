@@ -31,6 +31,8 @@ module.exports = (config) => {
 		req.session = req.headers['session']
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null)
+
+		utilities.usage(req)
 	    
 		next()
 

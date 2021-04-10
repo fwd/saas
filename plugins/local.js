@@ -189,10 +189,12 @@ module.exports = (config) => {
 							return
 						}
 
-						delete req.user.password
+						var user = JSON.parse(JSON.stringify(req.user))
+
+						delete user.password
 
 						resolve({
-							user: req.user
+							user: user
 						})
 						
 					})

@@ -32,7 +32,7 @@ module.exports = (config) => {
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null)
 
-		if (config.debug || req.user) {
+		if (config.usage || req.user) {
 		   utilities.usage(req)
 		}
 			

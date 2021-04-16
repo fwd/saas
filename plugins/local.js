@@ -1,3 +1,4 @@
+const fs = require('fs')
 const _ = require('lodash')
 const moment = require('moment')
 const server = require('@fwd/server')
@@ -50,12 +51,13 @@ module.exports = (config) => {
 
 	api.use(security.firewall)
 
+	var endpoints = []
 	config.auth = config.auth || true
 	config.registration = config.registration || true
 
 	if (config.auth) {
 
-		api.add([
+		var _auth = ([
 			{
 				path: '/login',
 				method: 'post',
@@ -163,7 +165,6 @@ module.exports = (config) => {
 					})
 				}
 			},
-
 			{
 				auth: true,
 				path: '/logout',
@@ -176,7 +177,6 @@ module.exports = (config) => {
 					})
 				}
 			},
-			
 			{
 				auth: true,
 				path: '/user',
@@ -203,7 +203,6 @@ module.exports = (config) => {
 					})
 				}
 			},
-
 			{
 				auth: true,
 				path: '/user',
@@ -248,9 +247,7 @@ module.exports = (config) => {
 					})
 
 				}
-
 			},
-
 			{
 				auth: true,
 				path: '/user/validate/email',
@@ -271,9 +268,7 @@ module.exports = (config) => {
 					})
 
 				}
-
 			},
-
 			{
 				method: 'get',
 				path: '/user/validate/email/:token',
@@ -300,29 +295,124 @@ module.exports = (config) => {
 					})
 
 				}
-
-			}
-
+			},
 		])
+
+		_auth.map(a => endpoints.push(a))
 
 	}
 
-	var endpoints = config.endpoints || []
+	if (config.upload) {
 
-		endpoints = endpoints.map(a => {
+		var uploadConfig = {
+			endpoint: config.upload.endpoint ? config.upload.endpoint : '/upload',
+			public: config.upload.public ? config.upload.public : false,
+			folder: config.upload.folder ? config.upload.folder : `./uploads`,
+			fileLimit: config.upload.fileLimit ? config.upload.fileLimit : 10,
+			sizeLimit: config.upload.sizeLimit ? (1024 * 1000) * config.upload.sizeLimit : (1024 * 1000) * 100,
+		}
 
-			a.method = a.method || 'get'
+		if (!fs.existsSync(uploadConfig.folder)){
+		    fs.mkdirSync(uploadConfig.folder);
+		}
 
-			if (a.auth && typeof a.auth == 'boolean') {
-				a.auth = async (req) => {
-					if (!req.user) return false
-					return true
-				}
-			} 
+		api.config.uploadFolder = uploadConfig.folder
 
-			return a
+		var multer = require('multer');
+
+		var storage = multer.diskStorage({
+			destination: function (req, file, callback) {
+				var path = uploadConfig.folder
+				callback(null, path);
+			},
+			filename: function (req, file, callback) {
+				var re = /(?:\.([^.]+))?$/;
+				callback(null, server.uuid(14, null, null, true) + '.' + re.exec(file.originalname)[1]);
+			}
+		})
+
+		var upload = multer({ storage : storage, limits: { fileSize: uploadConfig.sizeLimit } }).array('files', uploadConfig.fileLimit)
+
+		endpoints.push({
+			path: uploadConfig.endpoint,
+			method: 'post',
+			limit: [5, 60],
+			action: (req) => {
+				return new Promise(async (resolve, reject) => {
+
+					var userId = req.user.id
+
+					upload(req, null, async function(err) {
+
+						if (err) {
+							return resolve(err)
+						}
+
+						var response = []
+
+						for (var file of req.files) {
+							file.id = file.filename.split('.')[0]
+							delete file.fieldname
+							delete file.destination
+							if (userId) file.userId = userId
+							response.push( await req.database.create(`uploads`, file) )
+						}
+
+					    resolve(response)
+
+					})
+
+				})
+
+			}
 
 		})
+
+		if (!uploadConfig.public) {
+
+			endpoints.push({
+				auth: true,
+				path: '/user/uploads',
+				method: 'get',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+						var query = req.query || {}
+							query.userId = req.user.id
+						var files = await req.database.paginate('uploads', query)
+							files = files.data.map(a => {
+								var protocol = req.get('host').includes('localhost') ? 'http://' : 'https://'
+								a.href = `${protocol}${req.get('host')}/${a.filename}`
+								return a
+							})
+						resolve( files )
+					})
+				}
+			})
+
+		}
+
+
+	}
+
+	if (config.endpoints) {
+		config.endpoints = Array.isArray(config.endpoints) ? config.endpoints : [config.endpoints]
+		config.endpoints.map(a => endpoints.push(a))
+	}
+
+	endpoints = endpoints.map(a => {
+
+		a.method = a.method || 'get'
+
+		if (a.auth && typeof a.auth == 'boolean') {
+			a.auth = async (req) => {
+				if (!req.user) return false
+				return true
+			}
+		} 
+
+		return a
+
+	})
 
 	api.add(endpoints)
 
@@ -332,7 +422,7 @@ module.exports = (config) => {
 		    method: 'get',
 		    action: (req) => {
 		        return new Promise((resolve, reject) => {
-		            resolve("Hello, World")
+		            resolve("Hello, World.")
 		        })
 		    }
 		})

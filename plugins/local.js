@@ -334,6 +334,7 @@ module.exports = (config) => {
 		var upload = multer({ storage : storage, limits: { fileSize: uploadConfig.sizeLimit } }).array('files', uploadConfig.fileLimit)
 
 		endpoints.push({
+			auth: !uploadConfig.public,
 			path: uploadConfig.endpoint,
 			method: 'post',
 			limit: [5, 60],

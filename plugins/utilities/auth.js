@@ -415,7 +415,6 @@ module.exports = (config) => {
             var metadata = req.body.metadata
             
             var referral = req.body.referral
-            
 
             return new Promise(async (resolve, reject) => {
 

@@ -18,7 +18,7 @@ const saas = require('@fwd/saas')({
     database: database,
 })
 
-saas.start(80)
+saas.start(8080)
 
 ```
 

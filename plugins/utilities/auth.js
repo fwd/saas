@@ -75,7 +75,9 @@ module.exports = (config) => {
                     id: sessionId
                 })
                 
-                console.log("session: " + session.ipAddress, "req: " + req.ipAddress )
+                if (session) {
+                    console.log("session: " + session.ipAddress, "req: " + req.ipAddress )
+                }
 
                 if (session && moment().isBefore(moment(session.expiration)) && session.ipAddress == req.ipAddress) {
                     return await database.findOne(`users`, {

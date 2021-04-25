@@ -37,7 +37,6 @@ module.exports = (config) => {
 		   utilities.usage(req)
 		}
 			
-	    
 		next()
 
 	})
@@ -322,7 +321,10 @@ module.exports = (config) => {
 
 		var storage = multer.diskStorage({
 			destination: function (req, file, callback) {
-				var path = uploadConfig.folder
+				var path = `${uploadConfig.folder}/${req.user ? req.user.namespace : server.uuid(true)}`
+				if (!fs.existsSync(path)){
+				    fs.mkdirSync(path);
+				}
 				callback(null, path);
 			},
 			filename: function (req, file, callback) {
@@ -353,6 +355,7 @@ module.exports = (config) => {
 
 						for (var file of req.files) {
 							file.id = file.filename.split('.')[0]
+							file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
 							delete file.fieldname
 							delete file.destination
 							if (userId) file.userId = userId
@@ -390,8 +393,33 @@ module.exports = (config) => {
 				}
 			})
 
-		}
+			endpoints.push({
+				auth: true,
+				path: '/user/uploads/:id',
+				method: 'delete',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
 
+						var file = await req.database.findOne('uploads', { id: req.params.id })
+
+						if (file.userId !== req.user.id) {
+							resolve({ error: 401 })
+							return
+						}
+						
+						await req.database.remove('uploads', req.params.id)
+
+						fs.unlinkSync(file.path);
+
+						resolve( files )
+
+					})
+
+				}
+
+			})
+
+		}
 
 	}
 

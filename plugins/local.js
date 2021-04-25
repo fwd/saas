@@ -409,9 +409,9 @@ module.exports = (config) => {
 						
 						await req.database.remove('uploads', req.params.id)
 
-						fs.unlinkSync(file.path);
+						fs.unlinkSync(file.path)
 
-						resolve( files )
+						resolve()
 
 					})
 

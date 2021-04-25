@@ -12,16 +12,13 @@ npm install fwd/saas
 
 ```js
 
-const database = require('@fwd/database')('local', {
-	filename: "database.json"
-})
+const database = require('@fwd/database')('local')
 
 const saas = require('@fwd/saas')({
-	namespace: 'hello_world'
-	database: database,
+    database: database,
 })
 
-saas.start(80, __dirname)
+saas.start(80)
 
 ```
 

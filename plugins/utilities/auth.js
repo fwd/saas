@@ -75,13 +75,13 @@ module.exports = (config) => {
                     id: sessionId
                 })
 
-                if (!session || moment().isAfter(moment(session.expiration)) || session.ipAddress !== req.ipAddress) {
-                    return false
+                if (session && moment().isBefore(moment(session.expiration)) && session.ipAddress == req.ipAddress) {
+                    return await database.findOne(`users`, {
+                        id: session.userId
+                    })
                 }
 
-                return await database.findOne(`users`, {
-                    id: session.userId
-                })
+                return false
 
             }
 

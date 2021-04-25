@@ -26,19 +26,20 @@ module.exports = (config) => {
         ],
 
         database: database,
-
-        // validate: {
-        //  async user(userId) {},
-        //  async session(sessionId) {},
-        //  async privateKey(sessionId) {},
-        //  async publicKey(sessionId) {},
-        // },
         
         generateUuid(prepend, length) {
             return `${prepend}${server.uuid().split('-').join('').toLowerCase().slice(0, length)}`
         },
+
+        // TODO cleaner API for validate
+        // find: {
+        //     async user(userId) {},
+        //     async session(sessionId) {},
+        //     async privateKey(sessionId) {},
+        //     async publicKey(sessionId) {},
+        // },
         
-        async validate(sessionId, user, private_key, public_key) {
+        async validate(sessionId, user, private_key, public_key, req) {
 
             if (public_key) {
 
@@ -74,7 +75,7 @@ module.exports = (config) => {
                     id: sessionId
                 })
 
-                if (!session || moment().isAfter(moment(session.expiration))) {
+                if (!session || moment().isAfter(moment(session.expiration)) || session.ipAddress !== req.ipAddress) {
                     return false
                 }
 
@@ -89,8 +90,9 @@ module.exports = (config) => {
                 var session = {
                     userId: user.id,
                     id: server.uuid(),
+                    ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL'),
-                    expiration: moment(server.timestamp('LLL')).add(24, 'hours')
+                    expiration: moment(server.timestamp('LLL')).add(4, 'hours')
                 }
                 
                 await database.create(`sessions`, session)
@@ -144,11 +146,31 @@ module.exports = (config) => {
                     return
                 }
 
-                var session = await self.validate(null, user)
+                // sessionId, user, private_key, public_key, req
+                var session = await self.validate(null, user, null, null, req)
 
                 await database.update(`users`, user.id, {
                     last_login: server.timestamp('LLL')
                 })
+
+                resolve({
+                    session: session.id,
+                    exp: session.expiration
+                })
+
+            })
+            
+        },
+
+        refresh(req) {
+
+            var self = this
+
+            return new Promise(async (resolve, reject) => {
+                
+                await database.remove(`sessions`, req.session)
+
+                var session = await self.validate(null, req.user, null, null, req)
 
                 resolve({
                     session: session.id,
@@ -310,11 +332,7 @@ module.exports = (config) => {
                     })
                 }
 
-                // TODO find out why this fixes the bug of records no updating
-                // unless we findOne first...wtf?
-                await database.findOne(`users`, {
-                    id: user.id
-                })
+                await database.findOne(`users`, { id: user.id })
 
                 user.updated_at = server.timestamp('LLL')
                 
@@ -364,8 +382,9 @@ module.exports = (config) => {
                     for (var i in sessions) {
                         await database.remove(`sessions`, sessions[i].id)
                     }
-
-                    var session = await self.validate(null, user)
+                    
+                    // sessionId, user, private_key, public_key, req
+                    var session = await self.validate(null, user, null, null, req)
 
                     await database.update(`tokens`, reset.id, {
                         used: server.timestamp('LLL'),
@@ -401,7 +420,7 @@ module.exports = (config) => {
             return new Promise(async (resolve, reject) => {
 
                 if (!validateEmail(username)) {
-                    resolve({
+                    reject({
                         code: 400,
                         error: true,
                         message: "Username must be a valid email address."
@@ -440,11 +459,12 @@ module.exports = (config) => {
 
                 await database.create(`users`, user) 
 
-                var session = await self.validate(null, user)
+                // sessionId, user, private_key, public_key, req
+                var session = await self.validate(null, user, null, null, req)
 
                 resolve({
                     session: session.id,
-                    exp: session.epiration
+                    exp: session.expiration
                 })
 
             })

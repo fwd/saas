@@ -27,11 +27,15 @@ module.exports = (config) => {
 
 	api.use(async (req, res, next) => {
 
+		var ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || (req.connection.socket ? req.connection.socket.remoteAddress : null);
+			ipAddress = ipAddress ? ipAddress.replace('::ffff:', '') : ipAddress
+
 		req.auth = auth
+		req.ipAddress = ipAddress
 		req.database = config.database
 		req.session = req.headers['session']
 		req.private_key = req.headers['authorization'] || req.headers['authorization'] || req.query.private_key
-		req.user = await auth.validate(req.session, null, req.private_key, null)
+		req.user = await auth.validate(req.session, null, req.private_key, null, req)
 
 		if (config.usage || req.user) {
 		   utilities.usage(req)
@@ -198,6 +202,26 @@ module.exports = (config) => {
 						resolve({
 							user: user
 						})
+						
+					})
+				}
+			},
+			{
+				auth: true,
+				path: '/refresh/token',
+				method: 'get',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							resolve({
+								error: true,
+								code: 401,
+							})
+							return
+						}
+
+						resolve( await auth.refresh(req) )
 						
 					})
 				}

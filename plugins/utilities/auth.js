@@ -74,14 +74,26 @@ module.exports = (config) => {
                 var session = await database.findOne(`sessions`, {
                     id: sessionId
                 })
-
-                if (session && moment().isBefore(moment(session.expiration)) && session.ipAddress == req.ipAddress) {
-                    return await database.findOne(`users`, {
-                        id: session.userId
-                    })
+                
+                if (!session) {
+                    return false
                 }
+                
+                // expired session
+                if (moment().isAfter(moment(session.expiration))) {
+                    return false
+                }
+                   
+                // not original ip address
+                if (session.ipAddress !== req.ipAddress) {
+                    return false
+                }
+                
+                // TODO ip geofencing
 
-                return false
+                return await database.findOne(`users`, {
+                    id: session.userId
+                })
 
             }
 

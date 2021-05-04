@@ -104,7 +104,7 @@ module.exports = (config) => {
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL'),
-                    expiration: moment(server.timestamp('LLL')).add(4, 'hours')
+                    expiration: moment(server.timestamp('LLL')).add(12, 'hours')
                 }
                 
                 await database.create(`sessions`, session)

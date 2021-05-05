@@ -32,6 +32,7 @@ module.exports = (config) => {
 
 		req.auth = auth
 		req.ipAddress = ipAddress
+		req.utilities = utilities
 		req.database = config.database
 		req.session = req.headers['session']
 		req.private_key = req.headers['authorization'] || req.query.private_key

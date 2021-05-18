@@ -52,10 +52,6 @@ module.exports = (config) => {
 		}
 		return false
 	}
-	
-	if (config.security) {
-		security.headers = config.security.headers
-	}
 
 	api.use(security.firewall)
 

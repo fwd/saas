@@ -53,7 +53,7 @@ module.exports = (config) => {
 		return false
 	}
 	
-	if (config.security && config.security.headers) {
+	if (config.security) {
 		security.headers = config.security.headers
 	}
 

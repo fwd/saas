@@ -80,7 +80,12 @@ module.exports = (config) => {
                 }
                 
                 // expired session
-                if (moment().isAfter(moment(session.expiration))) {
+                if (
+                    config.security && 
+                    config.security.session && 
+                    config.security.session.expiration && 
+                    moment().isAfter(moment(session.expiration))
+                ) {
                     return false
                 }
                    
@@ -90,7 +95,6 @@ module.exports = (config) => {
                 }
                 
                 // TODO ip geofencing
-
                 return await database.findOne(`users`, {
                     id: session.userId
                 })

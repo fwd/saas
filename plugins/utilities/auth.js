@@ -81,7 +81,8 @@ module.exports = (config) => {
                 
                 // expired session
                 if ( moment().isAfter(moment(session.expiration)) ) {
-                    return false
+                    console.log("Expired!")
+                    // return false
                 }
                    
                 // not original ip address

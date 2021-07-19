@@ -80,12 +80,7 @@ module.exports = (config) => {
                 }
                 
                 // expired session
-                if (
-                    config.security && 
-                    config.security.session && 
-                    config.security.session.expiration && 
-                    moment().isAfter(moment(session.expiration))
-                ) {
+                if ( moment().isAfter(moment(session.expiration)) ) {
                     return false
                 }
                    
@@ -108,7 +103,7 @@ module.exports = (config) => {
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL'),
-                    expiration: moment(server.timestamp('LLL')).add(12, 'hours')
+                    expiration: moment().add(12, 'hours')
                 }
                 
                 await database.create(`sessions`, session)

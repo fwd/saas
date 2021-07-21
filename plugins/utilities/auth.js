@@ -81,13 +81,11 @@ module.exports = (config) => {
                 
                 // expired session
                 if ( moment(server.timestamp('LLL', 'us-east')).isAfter(moment(session.expiration)) ) {
-                    console.log("Expired!", session.expiration)
-                    // return false
+                    return false
                 }
                    
                 // not original ip address
                 if (session.ipAddress !== req.ipAddress) {
-                    console.log("BAD IPPP!")
                     return false
                 }
                 
@@ -105,7 +103,7 @@ module.exports = (config) => {
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL', 'us-east'),
-                    expiration: moment(server.timestamp('LLL', 'us-east')).add(12, 'hours')
+                    expiration: moment(server.timestamp('LLL', 'us-east')).add(4, 'hours')
                 }
                 
                 await database.create(`sessions`, session)

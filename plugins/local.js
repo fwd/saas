@@ -28,8 +28,8 @@ module.exports = (config) => {
 	api.use(async (req, res, next) => {
 
 		var ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || (req.connection.socket ? req.connection.socket.remoteAddress : null);
-		    ipAddress = ipAddress ? ipAddress.replace('::ffff:', '') : ipAddress
 		    ipAddress = ipAddress ? ipAddress.split(',')[0] : ipAddress
+		    ipAddress = ipAddress ? ipAddress.replace('::ffff:', '') : ipAddress
 
 		req.auth = auth
 		req.ipAddress = ipAddress

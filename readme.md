@@ -1,6 +1,10 @@
-<h1 align="center">@fwd/saas 🔐</h1>
+<!-- <h1 align="center">JSON Database</h1> -->
 
-> An NPM package for bootstraping NODE SaaS applications.
+![Or do](https://i.ibb.co/17s2yyM/image.png)
+
+# fwd/database
+
+> NPM package for bootstrapping NodeJS SaaS development. 
 
 ## Install
 

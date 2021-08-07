@@ -302,12 +302,11 @@ module.exports = (config) => {
 
                 }
                 
-
             })
             
         },
 
-        update(key, user, value) {
+        update(user, key, value) {
 
             var self = this
 
@@ -343,9 +342,8 @@ module.exports = (config) => {
                     })
                 }
 
+                // TODO remove this hack of having to fetch model before updating
                 await database.findOne(`users`, { id: user.id })
-
-                user.updated_at = server.timestamp('LLL')
                 
                 await database.update(`users`, user.id, user)
 
@@ -409,7 +407,6 @@ module.exports = (config) => {
                 } catch(e) {
                     console.log(e)
                 }
-
 
             })
             

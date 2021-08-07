@@ -2,7 +2,7 @@
 
 ![Or do](https://i.ibb.co/17s2yyM/image.png)
 
-# fwd/database
+# fwd/saas
 
 > NPM package for bootstrapping NodeJS SaaS development. 
 

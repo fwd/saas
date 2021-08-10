@@ -80,7 +80,7 @@ module.exports = (config) => {
                 }
                 
                 // expired session
-                if ( moment(server.timestamp('LLL', 'us-east')).isAfter(moment(session.expiration)) ) {
+                if ( moment(server.timestamp('LLL', config.timezone)).isAfter(moment(session.expiration)) ) {
                     return false
                 }
                    
@@ -102,8 +102,8 @@ module.exports = (config) => {
                     userId: user.id,
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
-                    created_at: server.timestamp('LLL', 'us-east'),
-                    expiration: moment(server.timestamp('LLL', 'us-east')).add(4, 'hours')
+                    created_at: server.timestamp('LLL', config.timezone),
+                    expiration: moment(server.timestamp('LLL', config.timezone)).add(4, 'hours')
                 }
                 
                 await database.create(`sessions`, session)
@@ -161,7 +161,7 @@ module.exports = (config) => {
                 var session = await self.validate(null, user, null, null, req)
 
                 await database.update(`users`, user.id, {
-                    last_login: server.timestamp('LLL')
+                    last_login: server.timestamp('LLL', config.timezone)
                 })
 
                 resolve({
@@ -265,7 +265,7 @@ module.exports = (config) => {
                         id: server.uuid(),
                         userId: req.user.id,
                         type: 'email_verification',
-                        expiration: moment(server.timestamp('LLL')).add(15, 'minutes')
+                        expiration: moment(server.timestamp('LLL', config.timezone)).add(15, 'minutes')
                     }
 
                     var history = await database.find(`tokens`, {
@@ -396,7 +396,7 @@ module.exports = (config) => {
                     var session = await self.validate(null, user, null, null, req)
 
                     await database.update(`tokens`, reset.id, {
-                        used: server.timestamp('LLL'),
+                        used: server.timestamp('LLL', config.timezone),
                     })
 
                     resolve({
@@ -458,8 +458,8 @@ module.exports = (config) => {
                     namespace: server.uuid(true).slice(0, 7),
                     public_key: self.generateUuid('public-', 14),
                     private_key: self.generateUuid('private-', 14),
-                    created_at: server.timestamp('LLL'),
-                    last_login: server.timestamp('LLL'),
+                    created_at: server.timestamp('LLL', config.timezone),
+                    last_login: server.timestamp('LLL', config.timezone),
                     referral: referral,
                     metadata: metadata || {}
                 }

@@ -312,12 +312,34 @@ module.exports = (config) => {
 
             return new Promise(async (resolve, reject) => {
 
+                console.log('key', key)
+
                 if (!self.updatable_keys.includes(key)) {
                     resolve({
                         error: true,
                         message: `Updating user.${key} key is not allowed. Store this value in metadata instead.`
                     })
                     return
+                }
+
+                if (key === 'username') {
+
+                    var exists = await database.findOne(`users`, {
+                        username: value
+                    })
+
+                    if (exists) {
+                        resolve({
+                            error: true,
+                            message: `Account with that username already exists.`
+                        })
+                        return
+                    }
+
+                    await database.update(`users`, user.id, { verified_email: false })
+
+                    user[key] = value
+
                 }
 
                 if (key === 'password') {

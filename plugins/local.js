@@ -261,13 +261,9 @@ module.exports = (config) => {
 								return
 							}
 							
-							var update = await auth.update(req.user, keys[i], req.body[keys[i]])
+							var response = await auth.update(req.user, keys[i], req.body[keys[i]])
 							
-							if (update.error) {
-								resolve(update)
-								return 
-							}
-
+							if (response && response.error) return resolve(response)
 						}
 
 						resolve({ success: true })

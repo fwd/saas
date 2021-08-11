@@ -336,9 +336,9 @@ module.exports = (config) => {
                         return
                     }
 
-                    await database.update(`users`, user.id, { verified_email: false })
-
                     user[key] = value
+                    
+                    user.verified_email = false
 
                 }
 

@@ -326,7 +326,7 @@ module.exports = (config) => {
                         username: value
                     })
 
-                    if (exists) {
+                    if (exists && exists.id !== user.id) {
                         resolve({
                             error: true,
                             message: `Account with that username already exists.`

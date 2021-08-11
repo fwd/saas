@@ -312,8 +312,6 @@ module.exports = (config) => {
 
             return new Promise(async (resolve, reject) => {
 
-                console.log('key', key)
-
                 if (!self.updatable_keys.includes(key)) {
                     resolve({
                         error: true,

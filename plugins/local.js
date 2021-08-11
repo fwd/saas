@@ -261,7 +261,7 @@ module.exports = (config) => {
 								return
 							}
 							
-							await auth.update(keys[i], req.user, req.body[keys[i]])
+							await auth.update(req.user, keys[i], req.body[keys[i]])
 
 						}
 

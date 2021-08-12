@@ -334,6 +334,10 @@ module.exports = (config) => {
                         return
                     }
 
+                    if (exists.username !== value) {
+                        user.verified_email = false
+                    }
+
                     user[key] = value
 
                 }

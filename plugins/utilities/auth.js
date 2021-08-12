@@ -335,8 +335,6 @@ module.exports = (config) => {
                     }
 
                     user[key] = value
-                    
-                    user.verified_email = false
 
                 }
 

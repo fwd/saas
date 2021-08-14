@@ -152,7 +152,7 @@ module.exports = (config) => {
                     resolve({
                         code: 401,
                         error: true,
-                        message: "The password provided does not match."
+                        message: "Password does not match."
                     })
                     return
                 }

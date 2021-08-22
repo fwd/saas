@@ -164,9 +164,13 @@ module.exports = (config) => {
                     last_login: server.timestamp('LLL', config.timezone)
                 })
 
-                resolve({
-                    session: session.id,
-                    exp: session.expiration
+                if (config.events && config.events.login) {
+                    config.events.login(user, session)
+                }
+
+                resolve({ 
+                    session: session.id, 
+                    exp: session.expiration 
                 })
 
             })
@@ -369,6 +373,10 @@ module.exports = (config) => {
                 
                 await database.update(`users`, user.id, user)
 
+                if (config.events && config.events.update) {
+                    config.events.update(user)
+                }
+
                 resolve()
 
             })
@@ -420,6 +428,10 @@ module.exports = (config) => {
                     await database.update(`tokens`, reset.id, {
                         used: server.timestamp('LLL', config.timezone),
                     })
+
+                    if (config.events && config.events.reset) {
+                        config.events.reset(user)
+                    }
 
                     resolve({
                         session: session.id,
@@ -490,6 +502,10 @@ module.exports = (config) => {
 
                 // sessionId, user, private_key, public_key, req
                 var session = await self.validate(null, user, null, null, req)
+
+                if (config.events && config.events.register) {
+                    config.events.register(user, session)
+                }
 
                 resolve({
                     session: session.id,

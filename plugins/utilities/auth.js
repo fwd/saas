@@ -302,6 +302,10 @@ module.exports = (config) => {
                         })
                     }
 
+                    if (config.events && config.events.verify) {
+                        config.events.verify(req.user)
+                    }
+
                     resolve( await utilities.mail(email) )
 
                 }

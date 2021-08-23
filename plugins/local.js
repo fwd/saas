@@ -42,6 +42,10 @@ module.exports = (config) => {
 		if (config.usage || req.user) {
 		   utilities.usage(req)
 		}
+
+		if (config.events.session) {
+			config.events.session(req)
+		}
 			
 		next()
 

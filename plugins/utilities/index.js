@@ -110,15 +110,16 @@ module.exports = (config) => {
 				try	{
 					var templatePath = template && template.includes('/') ? template : __dirname + `/../views/${template}`
 					fs.readFile(templatePath, 'utf-8', function(err, body) {
-						resolve(ejs.render(body, {
-							data: data
-						}))
+						try {
+							resolve(ejs.render(body, { data: data }))
+						} catch (e) {
+						   console.log("EJS Rendering Error:", e)
+							resolve({ error: true, message: e.message })
+						}
 					});
 				} catch (e) {
-					console.log("Error:", e)
-					resolve({
-						error: true
-					})
+					console.log("EJS Rendering Error:", e)
+					resolve({ error: true, message: e.message })
 				}
 			})
 		}

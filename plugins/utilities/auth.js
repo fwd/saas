@@ -284,17 +284,17 @@ module.exports = (config) => {
                     await database.create(`tokens`, token)
 
                     var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
-                    var buttonUrl = host + `/user/validate/email/${token.id }`
+                    var buttonUrl = host + `/user/validate/email/${token.id}`
 
                     if (config.business.verificationRedirect) {
-                        buttonUrl += '?redirect=' + config.business.verificationRedirect
+                        buttonUrl += '?redirect=' + (config.business.verificationRedirect || '/#/login')
                     }
 
                     var email = {
                         to: req.user.username,
                         subject: 'Verify Email Address',
                         from: `${config.business.name} <${config.business.email}>`,
-                        html: await utilities.render('welcome.html', {
+                        html: await utilities.render(config.business && config.business.email && config.business.email.verify ? config.business.email.verify : 'welcome.html', {
                             host: host,
                             config: config,
                             business: config.business,

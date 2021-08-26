@@ -294,7 +294,7 @@ module.exports = (config) => {
                         to: req.user.username,
                         subject: 'Verify Email Address',
                         from: `${config.business.name} <${config.business.email}>`,
-                        html: await utilities.render(config.business && config.business.email && config.business.email.verify ? config.business.email.verify : 'welcome.html', {
+                        html: await utilities.render(config.business && config.business.template && config.business.template.verify ? config.business.template.verify : 'welcome.html', {
                             host: host,
                             config: config,
                             business: config.business,

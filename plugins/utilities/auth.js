@@ -306,7 +306,12 @@ module.exports = (config) => {
                         config.events.verify(req.user)
                     }
 
-                    resolve( await utilities.mail(email) )
+                    try {
+                        resolve( await utilities.mail(email) )
+                    } catch (e) {
+                         console.log(e)
+                         resolve({ error: true, message: e.message }) 
+                    }
 
                 }
                 

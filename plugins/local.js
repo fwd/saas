@@ -48,14 +48,16 @@ module.exports = (config) => {
 
 	})
 
-	security.allow = (req) => {
-		if (req.user) {
-			return true
+	if (config.security !== false) {
+		security.allow = (req) => {
+			if (req.user) {
+				return true
+			}
+			return false
 		}
-		return false
-	}
 
-	api.use(security.firewall)
+		api.use(security.firewall)	
+	}
 
 	var endpoints = []
 	config.auth = config.auth || true

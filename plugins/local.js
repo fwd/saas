@@ -32,6 +32,7 @@ module.exports = (config) => {
 		    ipAddress = ipAddress ? ipAddress.replace('::ffff:', '') : ipAddress
 
 		req.auth = auth
+		req.saas = config
 		req.ipAddress = ipAddress
 		req.utilities = utilities
 		req.database = config.database

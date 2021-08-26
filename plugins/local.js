@@ -39,10 +39,6 @@ module.exports = (config) => {
 		req.private_key = req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null, req)
 
-		if (config.usage || req.user) {
-		   utilities.usage(req)
-		}
-
 		if (config.events.session) {
 			config.events.session(req)
 		}

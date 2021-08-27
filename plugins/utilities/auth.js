@@ -120,7 +120,7 @@ module.exports = (config) => {
 
             var self = this
 
-            var username = req.body.username
+            var username = req.body.username.toLowerCase()
 
             var password = req.body.password
 

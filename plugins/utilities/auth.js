@@ -333,7 +333,7 @@ module.exports = (config) => {
                     return
                 }
 
-                if (key === 'username') {
+                if (key === 'username' && value) {
 
                     var exists = await database.findOne(`users`, {
                         username: value
@@ -355,7 +355,7 @@ module.exports = (config) => {
 
                 }
 
-                if (key === 'password') {
+                if (key === 'password' && value) {
                     user[key] = await bcrypt.hash(value, 10)
                 }
 

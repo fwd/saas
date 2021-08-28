@@ -8,6 +8,8 @@ const security = require('@fwd/security')
 moment.suppressDeprecationWarnings = true;
 
 module.exports = (config) => {
+	
+	config.events = config.events || {}
 
 	if (!config.database) {
 		console.log("Error: @fwd/database required")

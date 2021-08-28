@@ -62,7 +62,7 @@ module.exports = (config) => {
 	}
 
 	var endpoints = []
-	config.auth = config.auth || true
+	config.auth = typeof config.auth == 'undefined' ? true : config.auth
 	config.registration = config.registration || true
 
 	if (config.auth) {

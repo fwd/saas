@@ -50,7 +50,7 @@ module.exports = (config) => {
 
 	})
 
-	if (config.security !== false) {
+	if (config.security) {
 		security.allow = (req) => {
 			if (req.user) {
 				return true

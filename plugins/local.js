@@ -388,15 +388,19 @@ module.exports = (config) => {
 						}
 
 						var response = []
-
-						for (var file of req.files) {
-							file.id = file.filename.split('.')[0]
-							file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
-							delete file.fieldname
-							delete file.destination
-							if (userId) file.userId = userId
-							file.metadata = metadata || {}
-							response.push( await req.database.create(`uploads`, file) )
+						
+						if (Array.isArray(req.files)) {
+						
+							for (var file of req.files) {
+								file.id = file.filename.split('.')[0]
+								file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
+								delete file.fieldname
+								delete file.destination
+								if (userId) file.userId = userId
+								file.metadata = metadata || {}
+								response.push( await req.database.create(`uploads`, file) )
+							}
+							
 						}
 
 					    resolve(response)

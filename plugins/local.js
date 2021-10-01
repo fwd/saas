@@ -372,8 +372,14 @@ module.exports = (config) => {
 			limit: [5, 60],
 			action: (req) => {
 				return new Promise(async (resolve, reject) => {
+					
+					var query = JSON.parse(JSON.stringify(req.query))
+					
+					    delete query.userId
 
-					var userId = req.user.id
+					var userId = req.user && req.user.id ? req.user.id : req.query.userId
+					
+					var metadata = req.body.metadata || query
 
 					upload(req, null, async function(err) {
 
@@ -389,6 +395,7 @@ module.exports = (config) => {
 							delete file.fieldname
 							delete file.destination
 							if (userId) file.userId = userId
+							file.metadata = metadata || {}
 							response.push( await req.database.create(`uploads`, file) )
 						}
 

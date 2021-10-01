@@ -98,12 +98,14 @@ module.exports = (config) => {
 
             if (user) {
 
+                var duration = config && config.security == false ? 24 : 4
+
                 var session = {
                     userId: user.id,
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL', config.timezone),
-                    expiration: moment(server.timestamp('LLL', config.timezone)).add(4, 'hours')
+                    expiration: moment(server.timestamp('LLL', config.timezone)).add(duration, 'hours')
                 }
                 
                 await database.create(`sessions`, session)

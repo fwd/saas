@@ -396,7 +396,7 @@ module.exports = (config) => {
 								file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
 								delete file.fieldname
 								delete file.destination
-								Object.keys(req.body).map(key => file[key] = req.body[key])
+								Object.keys(req.query).map(key => file[key] = req.query[key])
 								response.push( await req.database.create('uploads', file) )
 							}
 							

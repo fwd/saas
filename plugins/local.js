@@ -379,7 +379,7 @@ module.exports = (config) => {
 
 					var userId = req.user && req.user.id ? req.user.id : req.query.userId
 					
-					var metadata = req.body.metadata || query
+					// var metadata = req.body.metadata || query
 
 					upload(req, null, async function(err) {
 
@@ -396,9 +396,8 @@ module.exports = (config) => {
 								file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
 								delete file.fieldname
 								delete file.destination
-								if (userId) file.userId = userId
-								file.metadata = metadata || {}
-								response.push( await req.database.create(`uploads`, file) )
+								Object.keys(req.body).map(key => file[key] = req.body[key])
+								response.push( await req.database.create('uploads', file) )
 							}
 							
 						}
@@ -441,9 +440,9 @@ module.exports = (config) => {
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 
-						var file = await req.database.findOne('uploads', { id: req.params.id })
+						var file = await req.database.findOne('uploads', { id: req.params.id, userId: req.user.id })
 
-						if (file.userId !== req.user.id) {
+						if (!file) {
 							resolve({ error: 401 })
 							return
 						}
@@ -451,6 +450,28 @@ module.exports = (config) => {
 						await req.database.remove('uploads', req.params.id)
 
 						fs.unlinkSync(file.path)
+
+						resolve()
+
+					})
+
+				}
+
+			})
+
+			endpoints.push({
+				auth: true,
+				path: '/user/uploads',
+				method: 'delete',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						var files = await req.database.get('uploads', { userId: req.user.id })
+
+						for (var item of files) {
+							await req.database.remove('uploads', item.id)
+							fs.unlinkSync(item.path)
+						}
 
 						resolve()
 

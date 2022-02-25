@@ -9,7 +9,7 @@ moment.suppressDeprecationWarnings = true;
 
 module.exports = (config) => {
 	
-	config.events = config.events || {}
+	config.events = config.events || config.event || {}
 
 	if (!config.database) {
 		console.log("Error: @fwd/database required")
@@ -25,6 +25,7 @@ module.exports = (config) => {
 	}
 
 	const auth = require('./utilities/auth')(config)
+	
 	const utilities = require('./utilities')(config)
 
 	api.use(async (req, res, next) => {
@@ -42,9 +43,7 @@ module.exports = (config) => {
 		req.private_key = req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null, req)
 
-		if (config.events.session) {
-			config.events.session(req)
-		}
+		if (config.events.session) config.events.session(req)
 			
 		next()
 
@@ -88,6 +87,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
 							resolve( await auth.login(req) )
+							if (config.events.login) config.events.login(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -122,6 +122,7 @@ module.exports = (config) => {
 						}
 						try	{
 							resolve( await auth.register(req) )
+							if (config.events.register) config.events.register(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -143,6 +144,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
 							resolve( await auth.forgot(req) )
+							if (config.events.forgot) config.events.forgot(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -169,6 +171,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
 							resolve( await auth.reset(req) )
+							if (config.events.reset) config.events.reset(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -181,9 +184,8 @@ module.exports = (config) => {
 				method: 'post',
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
-
 						resolve( await req.database.remove('sessions', req.headers.session) )
-						
+						if (config.events.logout) config.events.logout(req)
 					})
 				}
 			},
@@ -195,20 +197,16 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							resolve({
-								error: true,
-								code: 401,
-							})
-							return
+							return resolve({ error: true, code: 401 })
 						}
 
 						var user = JSON.parse(JSON.stringify(req.user))
 
 						delete user.password
 
-						resolve({
-							user: user
-						})
+						if (config.events.user) user = await config.events.user(user)
+
+						resolve({ user })
 						
 					})
 				}
@@ -378,8 +376,6 @@ module.exports = (config) => {
 					    delete query.userId
 
 					var userId = req.user && req.user.id ? req.user.id : req.query.userId
-					
-					// var metadata = req.body.metadata || query
 
 					upload(req, null, async function(err) {
 
@@ -403,6 +399,8 @@ module.exports = (config) => {
 						}
 
 					    resolve(response)
+
+						if (config.events.upload) config.events.upload(response)
 
 					})
 
@@ -508,6 +506,7 @@ module.exports = (config) => {
 	api.add(endpoints)
 
 	if (!endpoints.find(a => a.path == '/')) {	
+
 		api.add({
 		    path: '/',
 		    method: 'get',
@@ -517,6 +516,7 @@ module.exports = (config) => {
 		        })
 		    }
 		})
+
 	}
 
 	if (!endpoints.find(a => a.path == '*')) {	

@@ -85,7 +85,7 @@ module.exports = (config) => {
                 }
                    
                 // not original ip address
-                if (session.ipAddress !== req.ipAddress) {
+                if (config.security && session.ipAddress !== req.ipAddress) {
                     return false
                 }
                 

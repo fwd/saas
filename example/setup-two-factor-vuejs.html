@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hello World</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios@0.26.0"></script>
+    </head>
+    <body>
+        <div id="app">
+            <div v-if="register">
+            	<form @submit.prevent="doRegister">
+            		<h3>Register</h3>
+	            	<input type="text" v-model="register.username" placeholder="Username">
+	            	<br><br>
+	            	<input type="text" v-model="register.password" placeholder="Password">
+	            	<br><br>
+	            	<button type="submit">Submit</button>
+            	</form>
+            	<br>
+            	Already have an account? <a @click="register = false; login = {}">Login</a>
+            </div>
+            <div v-if="login">
+            	<form @submit.prevent="doLogin">
+            		<h3>Login</h3>
+	            	<input type="text" v-model="login.username" placeholder="Username">
+	            	<br><br>
+	            	<input type="text" v-model="login.password" placeholder="Password">
+	            	<br><br>
+	            	<div v-if="twoFactorRequired">
+	            		<input type="text" v-model="login.code" placeholder="Two-Factor Code">
+	            		<br><br>
+	            	</div>
+	            	<button type="submit">Submit</button>
+            	</form>
+            	<br>
+            	Don't have an account? <a @click="register = {}; login = false">Register</a>
+            </div>
+            <div v-if="user">
+            	<b>Welcome</b>, {{ user.username }} (<a @click="logout()" style="border-bottom: 1px solid;">Logout</a>)
+            	<br>
+            	<br>
+            	<button v-if="!user || user && !user.two_factor" @click="setup2Factor()">Setup 2-Factor Authentication</button>
+            	<div v-if="user && user.two_factor">
+            		Two factor is setup!
+            		<br>
+	            	<br>
+	            	<input type="text" v-model="removeCode" placeholder="Code required">
+	            	<br>
+	            	<br>
+	            	<button @click="removeTwoFactor()" style="color: white; background: red;">Remove 2 Factor</button>
+            	</div>
+            	<div v-if="twoFactorSetup">
+            		<a :href="twoFactorSetup.uri"></a>
+            		<img :src="twoFactorSetup.qr" alt="">
+	            	<br>
+	            	<br>
+	            	<input type="text" v-model="twoFactorSetup.code" placeholder="Code from Auth App">
+	            	<br>
+	            	<br>
+	            	<button @click="confirm2FactorSetup()" style="color: white; background: #00b800;">Confirm Setup</button>
+	            	<br>
+	            	<br>
+	            	<a @click="twoFactorSetup = false" style="border-bottom: 1px solid;">Cancel</a>
+            	</div>	
+            </div>
+        </div>
+        <script>
+	        var app = new Vue({
+				el: '#app',
+				data: {
+					login: false,
+					register: false,
+					twoFactorRequired: false,
+					removeCode: '',
+					twoFactorSetup: false,
+					user: false,
+					headers: { headers: { 'session': localStorage.getItem('session') } }
+				},
+				mounted() {
+					if (localStorage.getItem('session')) {
+						axios.get('/user', this.headers).then((res) => {
+							if (res.data.code === 401) {
+								localStorage.removeItem('session')
+								this.login = {}
+								return
+							}
+							this.user = res.data.response.user
+						})
+					} else {
+						this.login = {}
+					}
+				},
+				methods: {
+					logout() {
+						localStorage.removeItem('session')
+						window.location.reload()
+					},
+					doLogin() {
+						var self = this
+						axios.post('/login', this.login).then((res) => {
+							if (res.data.error) {
+								alert(res.data.message)
+							}
+							if (res.data.response.two_factor) {
+								self.twoFactorRequired = true
+								self.$forceUpdate()
+							}
+							if (res.data.response.session) {
+								localStorage.setItem('session', res.data.response.session)
+								window.location.reload()
+								return
+							}
+						})
+					},
+					doRegister() {
+						axios.post('/register', this.register).then((res) => {
+							if (res.data.error) {
+								alert(res.data.message)
+								return
+							}
+							localStorage.setItem('session', res.data.response.session)
+							window.location.reload()
+						})
+					},
+					setup2Factor() {
+						axios.get('/user/two-factor', this.headers).then((res) => {
+							if (res.data.error) {
+								alert(res.data.message)
+								return
+							}
+							this.twoFactorSetup = res.data.response
+						})
+					},
+					confirm2FactorSetup() {
+						axios.post('/user/two-factor', { id: this.twoFactorSetup.id, code: this.twoFactorSetup.code }, this.headers).then((res) => {
+							if (res.data.error) {
+								alert(res.data.message)
+								return
+							}
+							if (res.data.response === "Ok") {
+								window.location.reload()
+							}
+						})
+					},
+					removeTwoFactor() {
+						axios.post('/user/two-factor/disable', { code: this.removeCode }, this.headers).then((res) => {
+							window.location.reload()
+						})
+					},
+				}
+			})
+        </script>
+    </body>
+</html>

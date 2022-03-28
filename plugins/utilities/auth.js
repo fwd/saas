@@ -1,6 +1,8 @@
+const _ = require('lodash')
 const moment = require('moment')
 const bcrypt = require('bcrypt')
 const server = require('@fwd/server')
+const twofactor = require("node-2fa")
 
 function validateEmail(email) {
     var re = /\S+@\S+\.\S+/;
@@ -140,21 +142,11 @@ module.exports = (config) => {
                 })
                 
                 if (!user) {
-                    resolve({
-                        code: 401,
-                        error: true,
-                        message: "Account not found."
-                    })
-                    return
+                    return reject({ code: 401, error: true, message: "Account not found." })
                 }
 
                 if (!user || !await bcrypt.compare(password, user.password)) {
-                    resolve({
-                        code: 401,
-                        error: true,
-                        message: "Password does not match."
-                    })
-                    return
+                    return reject({ code: 401, error: true, message: "Password does not match." })
                 }
 
                 // sessionId, user, private_key, public_key, req
@@ -169,6 +161,7 @@ module.exports = (config) => {
                 }
 
                 resolve({ 
+                    userId: user.id, 
                     session: session.id, 
                     exp: session.expiration 
                 })
@@ -522,6 +515,23 @@ module.exports = (config) => {
                 })
 
             })
+
+        },
+
+        async has2Factor(req) {
+            return await database.findOne('two-factor', { userId: req.user.id })
+
+        },
+
+        async check2Factor(req, code) {
+
+            if (!req || !req.user || !req.user.id) return console.error("No user provided for two-factor check.")
+
+            var twoFactorEnabled = this.has2Factor(req.user.id)
+
+            if (!twoFactorEnabled) return false
+
+            return twofactor.verifyToken(twoFactorEnabled.secret, code)
 
         },
 

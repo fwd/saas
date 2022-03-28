@@ -520,14 +520,13 @@ module.exports = (config) => {
 
         async has2Factor(req) {
             return await database.findOne('two-factor', { userId: req.user.id })
-
         },
 
         async check2Factor(req, code) {
 
             if (!req || !req.user || !req.user.id) return console.error("No user provided for two-factor check.")
 
-            var twoFactorEnabled = this.has2Factor(req.user.id)
+            var twoFactorEnabled = await this.has2Factor(req)
 
             if (!twoFactorEnabled) return false
 

@@ -1,9 +1,15 @@
 const fs = require('fs')
 const _ = require('lodash')
+const bcrypt = require('bcrypt')
 const moment = require('moment')
 const server = require('@fwd/server')
 const api = require('@fwd/api')
 const security = require('@fwd/security')
+const twofactor = require("node-2fa")
+
+const crypto = require('crypto')
+
+var hashing_algorithm = 'aes256';
 
 moment.suppressDeprecationWarnings = true;
 
@@ -82,13 +88,41 @@ module.exports = (config) => {
 						type: "string",
 						required: true
 					},
+					{
+						name: "code",
+						type: "string",
+					},
 				],
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
-							resolve( await auth.login(req) )
+
+							var session = await auth.login(req)
+
+							var hasTwoFactor = await auth.has2Factor(req)
+
+							if (hasTwoFactor) {
+
+								if (!req.body.code) {
+									return resolve({ code: 401, two_factor: true, message: "Multi-factor is enabled. Please provide code." })
+								}
+
+								if (!twofactor.verifyToken(hasTwoFactor.secret, req.body.code)) {
+									resolve({ code: 500, error: true, message: "Code is invalid." })
+									if (config.events.failedTwoFactor) config.events.failedTwoFactor(req)
+									return 
+								}
+					
+							}
+
+							delete session.userId
+
+							resolve( session )
+
 							if (config.events.login) config.events.login(req)
+
 						} catch (error) {
+							console.log(error)
 							resolve(error)
 						}
 					})
@@ -204,9 +238,13 @@ module.exports = (config) => {
 
 						delete user.password
 
-						if (config.events.user) user = await config.events.user(user)
+						var twoFactorEnabled = await req.database.findOne('two-factor', { userId: req.user.id })
+
+						if (twoFactorEnabled) user.two_factor = true
 
 						resolve({ user })
+
+						if (config.events.user) user = await config.events.user(user)
 						
 					})
 				}
@@ -323,6 +361,131 @@ module.exports = (config) => {
 
 				}
 			},
+			// Two Factor
+			{
+				auth: true,
+				path: '/user/two-factor',
+				method: 'get',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							resolve({
+								error: true,
+								code: 401,
+							})
+							return
+						}
+
+						var attempt = twofactor.generateSecret({ name: config.business && config.business.name ? config.business.name : req.get('host'), account: req.user.username });
+							
+						attempt.id = server.uuid()
+						attempt.userId = req.user.id
+						attempt.ip = req.user.ip || req.user.ipAddress
+						attempt.expres = moment(server.timestamp('LLL')).add(10, 'minutes')
+
+						server.cache(attempt.id, attempt, server.cache(5, 'minutes'))
+
+						resolve({ 
+							id: attempt.id,
+							uri: attempt.uri,
+							qr: attempt.qr,
+						})
+
+					})
+
+				}
+			},
+			{
+				auth: true,
+				path: '/user/two-factor',
+				method: 'post',
+				parameters: [
+					{
+						type: "string",
+						name: "id",
+						required: true
+					},
+					{
+						type: "string",
+						name: "code",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							return resolve({ error: true, code: 401, })
+						}
+
+						var attempt = server.cache(req.body.id)
+
+						if (!attempt) {
+							return resolve({ error: true, code: 401, message: "Invalid attempt id."})
+						}
+
+						if (!twofactor.verifyToken(attempt.secret, req.body.code)) {
+							return resolve({ error: true, code: 401, message: "Invalid first code."})
+						}
+
+						var existing_codes = await req.database.get('two-factor', { userId: req.user.id })
+
+						for (var code of existing_codes) {
+							await req.database.remove('two-factor', code.id)
+						}
+
+						await req.database.create('two-factor', { 
+							userId: req.user.id,
+							secret: attempt.secret
+						})
+
+						resolve("Ok")
+
+						server.cache(attempt.id, null)
+
+					})
+
+				}
+			},
+			{
+				auth: true,
+				path: '/user/two-factor/disable',
+				method: 'post',
+				parameters: [
+					{
+						type: "string",
+						name: "code",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							return resolve({ error: true, code: 401, })
+						}
+
+						if (!(await req.auth.has2Factor(req))) {
+							return resolve({ error: true, code: 400, message: "You don't have Multi-factor enabled." })
+						}
+
+						if (!(await req.auth.check2Factor(req, req.body.code))) {
+							return resolve({ error: true, code: 401, message: "Invalid code." })
+						}
+
+						var twoFactorEnabled = await req.database.get('two-factor', { userId: req.user.id })
+
+						for (var item of twoFactorEnabled) {
+							await req.database.remove('two-factor', item.id)
+						}
+
+						resolve("Two-factor disabled.")
+
+					})
+
+				}
+			}
 		])
 
 		_auth.map(a => endpoints.push(a))

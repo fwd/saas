@@ -7,10 +7,6 @@ const api = require('@fwd/api')
 const security = require('@fwd/security')
 const twofactor = require("node-2fa")
 
-const crypto = require('crypto')
-
-var hashing_algorithm = 'aes256';
-
 moment.suppressDeprecationWarnings = true;
 
 module.exports = (config) => {

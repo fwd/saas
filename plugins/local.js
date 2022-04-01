@@ -386,6 +386,7 @@ module.exports = (config) => {
 							id: attempt.id,
 							uri: attempt.uri,
 							qr: attempt.qr,
+							key: attempt.secret
 						})
 
 					})

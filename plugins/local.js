@@ -95,9 +95,11 @@ module.exports = (config) => {
 
 							var session = await auth.login(req)
 
-							var hasTwoFactor = await auth.has2Factor(req)
+							if (!session) return resolve({ error: true, code: 401, message: "Bad combination." })
 
-							if (hasTwoFactor) {
+							var hasTwoFactor = await req.database.findOne('two-factor', { userId: session.userId })
+
+							if (hasTwoFactor && hasTwoFactor.id) {
 
 								if (!req.body.code) {
 									return resolve({ code: 401, two_factor: true, message: "Multi-factor is enabled. Please provide code." })

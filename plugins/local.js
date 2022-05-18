@@ -1,15 +1,17 @@
 const fs = require('fs')
 const _ = require('lodash')
+const bcrypt = require('bcrypt')
 const moment = require('moment')
 const server = require('@fwd/server')
 const api = require('@fwd/api')
 const security = require('@fwd/security')
+const twofactor = require("node-2fa")
 
 moment.suppressDeprecationWarnings = true;
 
 module.exports = (config) => {
 	
-	config.events = config.events || {}
+	config.events = config.events || config.event || {}
 
 	if (!config.database) {
 		console.log("Error: @fwd/database required")
@@ -25,6 +27,7 @@ module.exports = (config) => {
 	}
 
 	const auth = require('./utilities/auth')(config)
+	
 	const utilities = require('./utilities')(config)
 
 	api.use(async (req, res, next) => {
@@ -42,9 +45,7 @@ module.exports = (config) => {
 		req.private_key = req.headers['authorization'] || req.query.private_key
 		req.user = await auth.validate(req.session, null, req.private_key, null, req)
 
-		if (config.events.session) {
-			config.events.session(req)
-		}
+		if (config.events.session) config.events.session(req)
 			
 		next()
 
@@ -83,12 +84,43 @@ module.exports = (config) => {
 						type: "string",
 						required: true
 					},
+					{
+						name: "code",
+						type: "string",
+					},
 				],
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
-							resolve( await auth.login(req) )
+
+							var session = await auth.login(req)
+
+							if (!session) return resolve({ error: true, code: 401, message: "Bad combination." })
+
+							var hasTwoFactor = await req.database.findOne('two-factor', { userId: session.userId })
+
+							if (hasTwoFactor && hasTwoFactor.id) {
+
+								if (!req.body.code) {
+									return resolve({ code: 401, two_factor: true, message: "Multi-factor is enabled. Please provide code." })
+								}
+
+								if (!twofactor.verifyToken(hasTwoFactor.secret, req.body.code)) {
+									resolve({ code: 500, error: true, message: "Code is invalid." })
+									if (config.events.failedTwoFactor) config.events.failedTwoFactor(req)
+									return 
+								}
+					
+							}
+
+							delete session.userId
+
+							resolve( session )
+
+							if (config.events.login) config.events.login(req)
+
 						} catch (error) {
+							console.log(error)
 							resolve(error)
 						}
 					})
@@ -122,6 +154,7 @@ module.exports = (config) => {
 						}
 						try	{
 							resolve( await auth.register(req) )
+							if (config.events.register) config.events.register(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -143,6 +176,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
 							resolve( await auth.forgot(req) )
+							if (config.events.forgot) config.events.forgot(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -169,6 +203,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 						try	{
 							resolve( await auth.reset(req) )
+							if (config.events.reset) config.events.reset(req)
 						} catch (error) {
 							resolve(error)
 						}
@@ -181,9 +216,8 @@ module.exports = (config) => {
 				method: 'post',
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
-
 						resolve( await req.database.remove('sessions', req.headers.session) )
-						
+						if (config.events.logout) config.events.logout(req)
 					})
 				}
 			},
@@ -195,20 +229,20 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							resolve({
-								error: true,
-								code: 401,
-							})
-							return
+							return resolve({ error: true, code: 401 })
 						}
 
 						var user = JSON.parse(JSON.stringify(req.user))
 
 						delete user.password
 
-						resolve({
-							user: user
-						})
+						var twoFactorEnabled = await req.database.findOne('two-factor', { userId: req.user.id })
+
+						if (twoFactorEnabled) user.two_factor = true
+
+						resolve({ user })
+
+						if (config.events.user) user = await config.events.user(user)
 						
 					})
 				}
@@ -325,6 +359,132 @@ module.exports = (config) => {
 
 				}
 			},
+			// Two Factor
+			{
+				auth: true,
+				path: '/user/two-factor',
+				method: 'get',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							resolve({
+								error: true,
+								code: 401,
+							})
+							return
+						}
+
+						var attempt = twofactor.generateSecret({ name: config.business && config.business.name ? config.business.name : req.get('host'), account: req.user.username });
+							
+						attempt.id = server.uuid()
+						attempt.userId = req.user.id
+						attempt.ip = req.user.ip || req.user.ipAddress
+						attempt.expres = moment(server.timestamp('LLL')).add(10, 'minutes')
+
+						server.cache(attempt.id, attempt, server.cache(5, 'minutes'))
+
+						resolve({ 
+							id: attempt.id,
+							uri: attempt.uri,
+							qr: attempt.qr,
+							key: attempt.secret
+						})
+
+					})
+
+				}
+			},
+			{
+				auth: true,
+				path: '/user/two-factor',
+				method: 'post',
+				parameters: [
+					{
+						type: "string",
+						name: "id",
+						required: true
+					},
+					{
+						type: "string",
+						name: "code",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							return resolve({ error: true, code: 401, })
+						}
+
+						var attempt = server.cache(req.body.id)
+
+						if (!attempt) {
+							return resolve({ error: true, code: 401, message: "Invalid attempt id."})
+						}
+
+						if (!twofactor.verifyToken(attempt.secret, req.body.code)) {
+							return resolve({ error: true, code: 401, message: "Invalid first code."})
+						}
+
+						var existing_codes = await req.database.get('two-factor', { userId: req.user.id })
+
+						for (var code of existing_codes) {
+							await req.database.remove('two-factor', code.id)
+						}
+
+						await req.database.create('two-factor', { 
+							userId: req.user.id,
+							secret: attempt.secret
+						})
+
+						resolve("Ok")
+
+						server.cache(attempt.id, null)
+
+					})
+
+				}
+			},
+			{
+				auth: true,
+				path: '/user/two-factor/disable',
+				method: 'post',
+				parameters: [
+					{
+						type: "string",
+						name: "code",
+						required: true
+					},
+				],
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						if (!req.user) {
+							return resolve({ error: true, code: 401, })
+						}
+
+						if (!(await req.auth.has2Factor(req))) {
+							return resolve({ error: true, code: 400, message: "You don't have Multi-factor enabled." })
+						}
+
+						if (!(await req.auth.check2Factor(req, req.body.code))) {
+							return resolve({ error: true, code: 401, message: "Invalid code." })
+						}
+
+						var twoFactorEnabled = await req.database.get('two-factor', { userId: req.user.id })
+
+						for (var item of twoFactorEnabled) {
+							await req.database.remove('two-factor', item.id)
+						}
+
+						resolve("Two-factor disabled.")
+
+					})
+
+				}
+			}
 		])
 
 		_auth.map(a => endpoints.push(a))
@@ -372,8 +532,12 @@ module.exports = (config) => {
 			limit: [5, 60],
 			action: (req) => {
 				return new Promise(async (resolve, reject) => {
+					
+					var query = JSON.parse(JSON.stringify(req.query))
+					
+					    delete query.userId
 
-					var userId = req.user.id
+					var userId = req.user && req.user.id ? req.user.id : req.query.userId
 
 					upload(req, null, async function(err) {
 
@@ -382,17 +546,23 @@ module.exports = (config) => {
 						}
 
 						var response = []
-
-						for (var file of req.files) {
-							file.id = file.filename.split('.')[0]
-							file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
-							delete file.fieldname
-							delete file.destination
-							if (userId) file.userId = userId
-							response.push( await req.database.create(`uploads`, file) )
+						
+						if (Array.isArray(req.files)) {
+						
+							for (var file of req.files) {
+								file.id = file.filename.split('.')[0]
+								file.uri = file.path.replace(uploadConfig.folder.replace('./', ''), '').replace('/', '') // TODO fix this crap
+								delete file.fieldname
+								delete file.destination
+								Object.keys(req.query).map(key => file[key] = req.query[key])
+								response.push( await req.database.create('uploads', file) )
+							}
+							
 						}
 
 					    resolve(response)
+
+						if (config.events.upload) config.events.upload(response)
 
 					})
 
@@ -430,9 +600,9 @@ module.exports = (config) => {
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 
-						var file = await req.database.findOne('uploads', { id: req.params.id })
+						var file = await req.database.findOne('uploads', { id: req.params.id, userId: req.user.id })
 
-						if (file.userId !== req.user.id) {
+						if (!file) {
 							resolve({ error: 401 })
 							return
 						}
@@ -440,6 +610,28 @@ module.exports = (config) => {
 						await req.database.remove('uploads', req.params.id)
 
 						fs.unlinkSync(file.path)
+
+						resolve()
+
+					})
+
+				}
+
+			})
+
+			endpoints.push({
+				auth: true,
+				path: '/user/uploads',
+				method: 'delete',
+				action: (req) => {
+					return new Promise(async (resolve, reject) => {
+
+						var files = await req.database.get('uploads', { userId: req.user.id })
+
+						for (var item of files) {
+							await req.database.remove('uploads', item.id)
+							fs.unlinkSync(item.path)
+						}
 
 						resolve()
 
@@ -476,6 +668,7 @@ module.exports = (config) => {
 	api.add(endpoints)
 
 	if (!endpoints.find(a => a.path == '/')) {	
+
 		api.add({
 		    path: '/',
 		    method: 'get',
@@ -485,6 +678,7 @@ module.exports = (config) => {
 		        })
 		    }
 		})
+
 	}
 
 	if (!endpoints.find(a => a.path == '*')) {	

@@ -1,10 +1,8 @@
 const fs = require('fs')
 const _ = require('lodash')
-const bcrypt = require('bcrypt')
 const moment = require('moment')
 const server = require('@fwd/server')
 const api = require('@fwd/api')
-const security = require('@fwd/security')
 const twofactor = require("node-2fa")
 
 moment.suppressDeprecationWarnings = true;
@@ -50,17 +48,6 @@ module.exports = (config) => {
 		next()
 
 	})
-
-	if (config.security) {
-		security.allow = (req) => {
-			if (req.user) {
-				return true
-			}
-			return false
-		}
-
-		api.use(security.firewall)	
-	}
 
 	var endpoints = []
 	config.auth = typeof config.auth == 'undefined' ? true : config.auth
@@ -499,6 +486,8 @@ module.exports = (config) => {
 			folder: config.upload.folder ? config.upload.folder : `./uploads`,
 			fileLimit: config.upload.fileLimit ? config.upload.fileLimit : 10,
 			sizeLimit: config.upload.sizeLimit ? (1024 * 1000) * config.upload.sizeLimit : (1024 * 1000) * 100,
+			uniqueName: config.upload.uniqueName == false ? false : true,
+			uniquePath: config.upload.uniquePath == false ? false : true,
 		}
 
 		if (!fs.existsSync(uploadConfig.folder)){
@@ -511,7 +500,11 @@ module.exports = (config) => {
 
 		var storage = multer.diskStorage({
 			destination: function (req, file, callback) {
-				var path = `${uploadConfig.folder}/${req.user ? req.user.namespace : server.uuid(true)}`
+				if (uploadConfig.uniquePath) {
+					var path = `${uploadConfig.folder}/${req.user ? req.user.namespace : server.uuid(true)}`
+				} else {
+					var path = `${uploadConfig.folder}`
+				}
 				if (!fs.existsSync(path)){
 				    fs.mkdirSync(path);
 				}
@@ -519,7 +512,11 @@ module.exports = (config) => {
 			},
 			filename: function (req, file, callback) {
 				var re = /(?:\.([^.]+))?$/;
-				callback(null, server.uuid(14, null, null, true) + '.' + re.exec(file.originalname)[1]);
+				if (uploadConfig.uniqueName) {
+					callback(null, server.uuid().split('-').join('') + '.' + re.exec(file.originalname)[1]);
+				} else {
+					callback(null, file.originalname);
+				}
 			}
 		})
 

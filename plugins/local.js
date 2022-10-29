@@ -92,11 +92,13 @@ module.exports = (config) => {
 									return resolve({ code: 401, two_factor: true, message: "Multi-factor is enabled. Please provide code." })
 								}
 
-								if (!twofactor.verifyToken(hasTwoFactor.secret, req.body.code)) {
+								if (!twofactor.verifyToken(hasTwoFactor.secret, req.body.code) || server.cache(`two-factor-${req.body.code}`)) {
 									resolve({ code: 500, error: true, message: "Code is invalid." })
 									if (config.events.failedTwoFactor) config.events.failedTwoFactor(req)
 									return 
 								}
+
+								server.cache(`two-factor-${req.body.code}`, 'used')
 					
 							}
 
@@ -485,7 +487,7 @@ module.exports = (config) => {
 			public: config.upload.public ? config.upload.public : false,
 			folder: config.upload.folder ? config.upload.folder : `./uploads`,
 			fileLimit: config.upload.fileLimit ? config.upload.fileLimit : 10,
-			sizeLimit: config.upload.sizeLimit ? (1024 * 1000) * config.upload.sizeLimit : (1024 * 1000) * 100,
+			sizeLimit: config.upload.sizeLimit ? config.upload.sizeLimit : null, // convert to MB
 			uniqueName: config.upload.uniqueName == false ? false : true,
 			uniquePath: config.upload.uniquePath == false ? false : true,
 		}
@@ -538,6 +540,11 @@ module.exports = (config) => {
 
 					upload(req, null, async function(err) {
 
+						if ( config.events.upload ) {
+							var callback = config.events.upload(req)
+							if (!callback) return resolve(callback)
+						} 
+
 						if (err) {
 							return resolve(err)
 						}
@@ -558,8 +565,6 @@ module.exports = (config) => {
 						}
 
 					    resolve(response)
-
-						if (config.events.upload) config.events.upload(response)
 
 					})
 

@@ -538,12 +538,12 @@ module.exports = (config) => {
 
 					var userId = req.user && req.user.id ? req.user.id : req.query.userId
 
-					upload(req, null, async function(err) {
+					if ( config.events.beforeUpload ) {
+						var callback = config.events.beforeUpload(req)
+						if (!callback) return resolve(callback)
+					} 
 
-						if ( config.events.upload ) {
-							var callback = config.events.upload(req)
-							if (!callback) return resolve(callback)
-						} 
+					upload(req, null, async function(err) {
 
 						if (err) {
 							return resolve(err)
@@ -565,6 +565,8 @@ module.exports = (config) => {
 						}
 
 					    resolve(response)
+
+					    if (config.events.upload) config.events.upload(response)
 
 					})
 

@@ -28,10 +28,7 @@ saas.start(8080)
 
 ## 👤 Author
 
-**Forward Miami**
-
-* Github: [@fwd](https://github.com/fwd)
-* Website: [https://forward.miami](https://forward.miami)
+[@nano2dev](https://twitter.com/nano2dev)
 
 ## 🤝 Contributing
 

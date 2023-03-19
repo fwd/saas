@@ -82,18 +82,18 @@ module.exports = (config) => {
 
 							var session = await auth.login(req)
 
-							if (!session) return resolve({ error: true, code: 401, message: "Bad combination." })
+							if (!session) return resolve({ error: 401, message: "Bad combination." })
 
 							var hasTwoFactor = await req.database.findOne('two-factor', { userId: session.userId })
 
 							if (hasTwoFactor && hasTwoFactor.id) {
 
 								if (!req.body.code) {
-									return resolve({ code: 401, two_factor: true, message: "Multi-factor is enabled. Please provide code." })
+									return resolve({ error: 401, two_factor: true, message: "Multi-factor is enabled. Please provide code." })
 								}
 
 								if (!twofactor.verifyToken(hasTwoFactor.secret, req.body.code) || server.cache(`two-factor-${req.body.code}`)) {
-									resolve({ code: 500, error: true, message: "Code is invalid." })
+									resolve({ error: 500, message: "Code is invalid." })
 									if (config.events.failedTwoFactor) config.events.failedTwoFactor(req)
 									return 
 								}
@@ -135,8 +135,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 						if (!config.registration || config.private) {
 							resolve({
-								code: 401,
-								error: true,
+								error: 401,
 								message: "Registration is not allowed."
 							})
 							return 
@@ -218,7 +217,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							return resolve({ error: true, code: 401 })
+							return resolve({ error: 401 })
 						}
 
 						var user = JSON.parse(JSON.stringify(req.user))
@@ -229,9 +228,9 @@ module.exports = (config) => {
 
 						if (twoFactorEnabled) user.two_factor = true
 
-						resolve({ user })
+						resolve(user)
 
-						if (config.events.user) user = await config.events.user(user)
+						if (config.events.user) await config.events.user(user)
 						
 					})
 				}
@@ -244,10 +243,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							resolve({
-								error: true,
-								code: 401,
-							})
+							resolve({ error: 401 })
 							return
 						}
 
@@ -270,10 +266,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							resolve({
-								error: true,
-								code: 401,
-							})
+							resolve({ error: 401 })
 							return
 						}
 
@@ -283,7 +276,7 @@ module.exports = (config) => {
 							
 							if (!auth.updatable_keys.includes(keys[i])) {
 								resolve({
-									error: true,
+									error: 400,
 									message: `'${keys[i]}' key is not supported. Store this value in metadata instead.`
 								})
 								return
@@ -308,10 +301,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							resolve({
-								error: true,
-								code: 401,
-							})
+							resolve({ error: 401 })
 							return
 						}
 
@@ -358,10 +348,7 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							resolve({
-								error: true,
-								code: 401,
-							})
+							resolve({ error: 401 })
 							return
 						}
 
@@ -405,17 +392,17 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							return resolve({ error: true, code: 401, })
+							return resolve({ error: 401, })
 						}
 
 						var attempt = server.cache(req.body.id)
 
 						if (!attempt) {
-							return resolve({ error: true, code: 401, message: "Invalid attempt id."})
+							return resolve({ error: 401, message: "Invalid attempt id."})
 						}
 
 						if (!twofactor.verifyToken(attempt.secret, req.body.code)) {
-							return resolve({ error: true, code: 401, message: "Invalid first code."})
+							return resolve({ error: 401, message: "Invalid first code."})
 						}
 
 						var existing_codes = await req.database.get('two-factor', { userId: req.user.id })
@@ -452,15 +439,15 @@ module.exports = (config) => {
 					return new Promise(async (resolve, reject) => {
 
 						if (!req.user) {
-							return resolve({ error: true, code: 401, })
+							return resolve({ error: 401, })
 						}
 
 						if (!(await req.auth.has2Factor(req))) {
-							return resolve({ error: true, code: 400, message: "You don't have Multi-factor enabled." })
+							return resolve({ error: 400, message: "You don't have Multi-factor enabled." })
 						}
 
 						if (!(await req.auth.check2Factor(req, req.body.code))) {
-							return resolve({ error: true, code: 401, message: "Invalid code." })
+							return resolve({ error: 401, message: "Invalid code." })
 						}
 
 						var twoFactorEnabled = await req.database.get('two-factor', { userId: req.user.id })

@@ -9,6 +9,10 @@ function validateEmail(email) {
     return re.test(email);
 }
 
+function fingerprint(ipAddress, userAgent) {
+    return `${ipAddress}-${userAgent ? userAgent.toLowerCase().split(' ').join('-') : '[no-user-agent]'}`
+}
+
 module.exports = (config) => {
 
     const utilities = require(__dirname + '/index')(config)
@@ -33,17 +37,9 @@ module.exports = (config) => {
             return `${prepend}${server.uuid().split('-').join('').toLowerCase().slice(0, length)}`
         },
 
-        // TODO cleaner API for validate
-        // find: {
-        //     async user(userId) {},
-        //     async session(sessionId) {},
-        //     async privateKey(sessionId) {},
-        //     async publicKey(sessionId) {},
-        // },
-        
         async validate(sessionId, user, private_key, public_key, req) {
 
-            if (public_key) {
+            if (config.public_key && public_key) {
 
                 var user = await database.findOne(`users`, {
                     public_key: public_key
@@ -57,7 +53,7 @@ module.exports = (config) => {
 
             }
 
-            if (private_key) {
+            if (config.private_key && private_key) {
 
                 var user = await database.findOne(`users`, {
                     private_key: private_key
@@ -86,26 +82,26 @@ module.exports = (config) => {
                     return false
                 }
                    
-                // not original ip address
-                if (config.security && session.ipAddress !== req.ipAddress) {
+                // not original ip and user-agent
+                if (session.fingerprint !== fingerprint(req.ipAddress, req.get('User-Agent'))) {
                     return false
                 }
                 
-                // TODO ip geofencing
-                return await database.findOne(`users`, {
-                    id: session.userId
-                })
+                return await database.findOne(`users`, { id: session.userId })
 
             }
 
             if (user) {
+
+                var twoFactorEnabled = await this.has2Factor(req)
 
                 var session = {
                     userId: user.id,
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL', config.timezone),
-                    expiration: moment(server.timestamp('LLL', config.timezone)).add((config.lockout || 48), 'hours')
+                    expiration: moment(server.timestamp('LLL', config.timezone)).add((config.lockout || 1), 'hours'),
+                    fingerprint: fingerprint(req.ipAddress, req.get('User-Agent'))
                 }
                 
                 await database.create(`sessions`, session)

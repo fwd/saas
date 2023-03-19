@@ -239,7 +239,7 @@ module.exports = (config) => {
 			{
 				auth: true,
 				path: '/refresh/token',
-				method: 'get',
+				method: 'post',
 				action: (req) => {
 					return new Promise(async (resolve, reject) => {
 
@@ -348,6 +348,7 @@ module.exports = (config) => {
 
 				}
 			},
+			
 			// Two Factor
 			{
 				auth: true,

@@ -353,11 +353,11 @@ module.exports = (config) => {
                 }
 
                 if (key === 'public_key') {
-                    user[key] = self.generateUuid('public-', 14)
+                    user[key] = self.generateUuid('public-', 15)
                 }
 
                 if (key === 'private_key') {
-                    user[key] = self.generateUuid('private-', 14)
+                    user[key] = self.generateUuid('private-', 30)
                 }
 
                 if (key === 'metadata') {
@@ -488,8 +488,8 @@ module.exports = (config) => {
                     username: username,
                     password: await bcrypt.hash(password, 10),
                     namespace: server.uuid(true).slice(0, 7),
-                    public_key: self.generateUuid('public-', 14),
-                    private_key: self.generateUuid('private-', 14),
+                    public_key: self.generateUuid('PUBLIC-', 15),
+                    private_key: self.generateUuid('PRIVATE-', 30),
                     created_at: server.timestamp('LLL', config.timezone),
                     last_login: server.timestamp('LLL', config.timezone),
                     referral: referral,

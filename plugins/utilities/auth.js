@@ -9,8 +9,8 @@ function validateEmail(email) {
     return re.test(email);
 }
 
-function fingerprint(ipAddress, userAgent) {
-    return `${ipAddress}-${userAgent ? userAgent.toLowerCase().split(' ').join('-') : '[no-user-agent]'}`
+function fingerprint(req) {
+    return `${req.ipAddress}-${req.headers.host}-${req.get('User-Agent') || '[no-user-agent]'}`
 }
 
 module.exports = (config) => {
@@ -82,8 +82,8 @@ module.exports = (config) => {
                     return false
                 }
                    
-                // not original ip and user-agent
-                if (session.fingerprint !== fingerprint(req.ipAddress, req.get('User-Agent'))) {
+                // not original ip, host and user-agent
+                if (session.fingerprint !== fingerprint(req)) {
                     return false
                 }
                 
@@ -101,7 +101,7 @@ module.exports = (config) => {
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL', config.timezone),
                     expiration: moment(server.timestamp('LLL', config.timezone)).add((config.lockout || 1), 'hours'),
-                    fingerprint: fingerprint(req.ipAddress, req.get('User-Agent'))
+                    fingerprint: fingerprint(req)
                 }
                 
                 await database.create(`sessions`, session)

@@ -336,7 +336,7 @@ module.exports = (config) => {
                         return
                     }
 
-                    if (exists.username !== value) {
+                    if (exists && exists.username !== value) {
                         user.verified_email = false
                     }
 

@@ -227,10 +227,10 @@ module.exports = (config) => {
 						var twoFactorEnabled = await req.database.findOne('two-factor', { userId: req.user.id })
 
 						if (twoFactorEnabled) user.two_factor = true
+						
+						if (config.events.user) user = await config.events.user(user)
 
 						resolve(user)
-
-						if (config.events.user) await config.events.user(user)
 						
 					})
 				}

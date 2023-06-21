@@ -145,6 +145,11 @@ module.exports = (config) => {
                     return reject({ code: 401, error: true, message: "Password does not match." })
                 }
 
+                if (config.events && config.events.beforeLogin) {
+                	var beforeLogin = await config.events.beforeLogin(user)
+                    if (!beforeLogin || beforeLogin.error) return resolve(beforeLogin)
+                }
+
                 // sessionId, user, private_key, public_key, req
                 var session = await self.validate(null, user, null, null, req)
 
@@ -494,6 +499,11 @@ module.exports = (config) => {
                     last_login: server.timestamp('LLL', config.timezone),
                     referral: referral,
                     metadata: metadata || {}
+                }
+
+                if (config.events && config.events.beforeRegister) {
+                	var beforeRegister = await config.events.beforeRegister(user)
+                    if (!beforeRegister || beforeRegister.error) return resolve(beforeRegister)
                 }
 
                 await database.create(`users`, user) 

@@ -146,7 +146,7 @@ module.exports = (config) => {
                 }
 
                 if (config.events && config.events.beforeLogin) {
-                	var beforeLogin = await config.events.beforeLogin(user)
+                    var beforeLogin = await config.events.beforeLogin(req, user)
                     if (!beforeLogin || beforeLogin.error) return resolve(beforeLogin)
                 }
 
@@ -502,8 +502,9 @@ module.exports = (config) => {
                 }
 
                 if (config.events && config.events.beforeRegister) {
-                	var beforeRegister = await config.events.beforeRegister(user)
+                    var beforeRegister = await config.events.beforeRegister(req, user)
                     if (!beforeRegister || beforeRegister.error) return resolve(beforeRegister)
+                    if (beforeRegister.id && user.id === beforeRegister.id) user = beforeRegister
                 }
 
                 await database.create(`users`, user) 

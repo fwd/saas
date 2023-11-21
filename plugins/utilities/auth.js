@@ -150,7 +150,6 @@ module.exports = (config) => {
                     if (!beforeLogin || beforeLogin.error) return resolve(beforeLogin)
                 }
 
-                // sessionId, user, private_key, public_key, req
                 var session = await self.validate(null, user, null, null, req)
 
                 await database.update(`users`, user.id, {
@@ -229,12 +228,12 @@ module.exports = (config) => {
 
                 await database.create(`tokens`, reset)
 
-                var host = (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
+                var host = config.business.host ? config.business.host : (req.get('host') == 'localhost' ? 'http://' : 'https://') + req.get('host')
                 var resetUrl = host + '?token=' + reset.id + '/#/reset'
 
                 var email = {
                     to: username,
-                    subject: 'Password Reset Request',
+                    subject: 'Password Reset',
                     from: `${config.business.name} <${config.business.email}>`,
                     html: await utilities.render('reset.html', {
                         host: host,

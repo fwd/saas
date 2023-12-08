@@ -83,9 +83,9 @@ module.exports = (config) => {
                 }
                    
                 // not original ip and user-agent
-                if (session.fingerprint !== fingerprint(req.ipAddress, req.get('User-Agent'))) {
-                    return false
-                }
+                // if (session.fingerprint !== fingerprint(req.ipAddress, req.get('User-Agent'))) {
+                //     return false
+                // }
                 
                 return await database.findOne(`users`, { id: session.userId })
 
@@ -100,7 +100,7 @@ module.exports = (config) => {
                     id: server.uuid(),
                     ipAddress: req.ipAddress,
                     created_at: server.timestamp('LLL', config.timezone),
-                    expiration: moment(server.timestamp('LLL', config.timezone)).add((config.lockout || 1), 'hours'),
+                    expiration: moment(server.timestamp('LLL', config.timezone)).add((config.lockout || 24), 'hours'),
                     fingerprint: fingerprint(req.ipAddress, req.get('User-Agent'))
                 }
                 

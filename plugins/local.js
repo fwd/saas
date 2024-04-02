@@ -537,7 +537,7 @@ module.exports = (config) => {
 							return resolve(err)
 						}
 
-						var response = []
+						var files = []
 						
 						if (Array.isArray(req.files)) {
 						
@@ -547,14 +547,17 @@ module.exports = (config) => {
 								delete file.fieldname
 								delete file.destination
 								Object.keys(req.query).map(key => file[key] = req.query[key])
-								response.push( await req.database.create('uploads', file) )
+								files.push( await req.database.create('uploads', file) )
 							}
 							
 						}
 
-					    resolve(response)
+					    if (config.events.upload) {
+							if ( config.events.upload.constructor.name === 'AsyncFunction' ) files = await config.events.upload(files)
+							if ( config.events.upload.constructor.name !== 'AsyncFunction' ) files = config.events.upload(files)
+					    }
 
-					    if (config.events.upload) config.events.upload(response)
+					    resolve(files)
 
 					})
 

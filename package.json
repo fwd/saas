@@ -1,6 +1,6 @@
 {
   "name": "@fwd/saas",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NPM package for bootstrapping Node SaaS applications.",
   "main": "index.js",
   "author": "nano2dev <hello@fwd.dev>",
